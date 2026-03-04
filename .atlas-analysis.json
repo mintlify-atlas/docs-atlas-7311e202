@@ -1,0 +1,140 @@
+{
+  "projectType": "saas",
+  "projectName": "TechCal",
+  "projectDescription": "A career operating system for discovering, planning, and acting on tech events that move your professional goals forward.",
+  "theme": "palm",
+  "primaryColor": "#0c9c04",
+  "lightColor": "#999999",
+  "darkColor": "#343434",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Product",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/discovery",
+              "features/calendar",
+              "features/dashboard",
+              "features/recommendations"
+            ]
+          },
+          {
+            "group": "Community",
+            "pages": [
+              "community/overview",
+              "community/profiles",
+              "community/hackathons"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Architecture",
+        "groups": [
+          {
+            "group": "System Design",
+            "pages": [
+              "architecture/overview",
+              "architecture/tech-stack",
+              "architecture/data-model"
+            ]
+          },
+          {
+            "group": "Core Systems",
+            "pages": [
+              "architecture/scoring-engine",
+              "architecture/ingestion-pipeline",
+              "architecture/recommendation-system"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Setup",
+            "pages": [
+              "development/setup",
+              "development/environment"
+            ]
+          },
+          {
+            "group": "Testing",
+            "pages": [
+              "development/testing",
+              "development/e2e-tests"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "development/deployment",
+              "development/monitoring"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Events API",
+            "pages": [
+              "api/events/filtered",
+              "api/events/recommendations",
+              "api/events/tracked"
+            ]
+          },
+          {
+            "group": "User & Profile",
+            "pages": [
+              "api/profile/career",
+              "api/profile/preferences",
+              "api/profile/analytics"
+            ]
+          },
+          {
+            "group": "Services",
+            "pages": [
+              "api/services/scoring",
+              "api/services/ingestion",
+              "api/services/calendar-sync"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Personalized event discovery with career-aware scoring",
+    "Intelligent event recommendations based on skills and goals",
+    "Calendar integration and event scheduling",
+    "Career dashboard with analytics and goal tracking",
+    "Hackathon team coordination and participation",
+    "Community profiles and social networking",
+    "Automated event ingestion from multiple sources",
+    "Behavioral analytics and recommendation tuning"
+  ],
+  "publicApiSurface": [
+    "GET /api/events/filtered - Retrieve filtered events with career scoring",
+    "GET /api/events/recommendations - Get personalized event recommendations",
+    "POST /api/events/tracked - Track user event interactions",
+    "GET /api/dashboard/analytics - Fetch career analytics and insights",
+    "POST /api/calendar/sync - Sync events with external calendars",
+    "GET /api/profile/career - Retrieve user career profile",
+    "PUT /api/profile/career - Update career profile and preferences",
+    "POST /api/admin/ingestion/run - Trigger event ingestion pipeline",
+    "GET /api/community/search - Search users and profiles",
+    "POST /api/hackathons/teams - Create or join hackathon teams"
+  ]
+}
