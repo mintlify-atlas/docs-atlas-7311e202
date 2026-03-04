@@ -1,0 +1,429 @@
+---
+title: "Public Profiles"
+description: "Create and customize your professional profile at /u/username—showcase your event history, career focus, and connect with the community"
+---
+
+## Overview
+
+Your **public profile** is your professional presence on TechCal. It's accessible at a clean URL: `techcal.com/u/yourname`
+
+Share this link on:
+- LinkedIn
+- Twitter/X
+- Your resume or portfolio
+- Email signatures
+
+Your profile showcases:
+- Career focus and goals
+- Events you've attended (optional)
+- Skills and interests
+- Network size (followers/following)
+
+<Note>
+  Public profiles are **opt-in**. By default, profiles are private. You must explicitly set yours to public in settings.
+</Note>
+
+## Setting Up Your Profile
+
+<Steps>
+  <Step title="Choose a Username">
+    Your username becomes your profile URL: `/u/yourname`
+
+    **Requirements**:
+    - 3-30 characters
+    - Must start with a letter
+    - Only letters, numbers, underscores, hyphens
+    - Case-insensitive (but display preserves case)
+
+    **Reserved usernames** (unavailable):
+    - admin, support, help, kure, kurecal, system, moderator, official
+
+    **Example valid usernames**:
+    - `john_smith`
+    - `sarah-chen`
+    - `alex2026`
+
+    **Example invalid usernames**:
+    - `123john` (starts with number)
+    - `jo` (too short, < 3 chars)
+    - `john smith` (contains space)
+  </Step>
+
+  <Step title="Write a Headline">
+    Your headline is a **120-character bio** that appears on your profile and in user cards.
+
+    **Tips**:
+    - Include your current role: "Senior Frontend Engineer at TechCorp"
+    - Mention your interests: "Passionate about React and Web Performance"
+    - Add your location: "Based in San Francisco"
+
+    **Example headlines**:
+    - "Full-stack developer | React, Node.js | Building SaaS products"
+    - "Data Scientist | ML/AI enthusiast | Looking to break into management"
+    - "CS Student | Interested in hackathons and open source"
+  </Step>
+
+  <Step title="Set Profile Visibility">
+    Go to **Settings** → **Social** → **Profile Visibility**:
+
+    - **Private**: No public profile (default)
+    - **Public**: Profile visible to everyone
+
+    <Warning>
+      Once you set your profile to public, anyone can view it—even users not logged into TechCal.
+    </Warning>
+  </Step>
+
+  <Step title="Enable Attendance Sharing (Optional)">
+    If you want to appear in "Who's Going" sections on event pages:
+
+    Go to **Settings** → **Social** → **Show Attendance**: Toggle **ON**
+
+    <Note>
+      You can have a public profile without showing attendance. These settings are independent.
+    </Note>
+  </Step>
+</Steps>
+
+## Profile Visibility Settings
+
+### Private Profiles
+
+**What happens when your profile is private:**
+
+- ❌ No public profile page (404 error for visitors)
+- ❌ Not searchable in Community Directory
+- ❌ Won't appear in "Who's Going" sections
+- ✅ You can still follow others (if Trust Level 1+)
+- ✅ Full access to event discovery and tracking
+
+**Best for**: Users who want event discovery without social networking.
+
+### Public Profiles
+
+**What happens when your profile is public:**
+
+- ✅ Profile accessible at `/u/yourname`
+- ✅ Searchable in Community Directory
+- ✅ Followers can see your activity (if attendance sharing enabled)
+- ✅ Appears in "Who's Going" (if attendance sharing enabled)
+- ✅ Can be indexed by search engines (Google, etc.)
+
+**Best for**: Building your professional network and personal brand.
+
+<Tip>
+  Public profiles can help with job hunting—recruiters can see your event attendance and career focus.
+</Tip>
+
+## Profile Page Sections
+
+### Header
+
+At the top of your profile:
+
+- **Avatar**: Profile photo or initials
+- **Full name**: Your display name
+- **@username**: Your unique username
+- **Headline**: Your 120-character bio
+- **Follower/Following counts**: Clickable to view lists
+- **Follow button**: For visitors to follow you
+- **Edit Settings button**: For you (when viewing your own profile)
+
+### Recent Events
+
+Displays events you've attended (if attendance sharing is enabled):
+
+- Event title
+- Date attended
+- Category (Conference, Workshop, etc.)
+- Career Impact Score (if applicable)
+
+<Note>
+  Recent Events shows only the last 10 events. Your full history is private.
+</Note>
+
+### Follower/Following Lists
+
+Click **Followers** or **Following** counts to view lists:
+
+- Avatar and name
+- Username and headline
+- Follow button (to follow/unfollow)
+- Mutual follow badge (if applicable)
+
+### Career Focus (Coming Soon)
+
+Will display:
+- Primary skills
+- Career goals
+- Interests
+
+## Editing Your Profile
+
+### Changing Your Username
+
+<Steps>
+  <Step title="Go to Social Settings">
+    Navigate to **Settings** → **Social**.
+  </Step>
+
+  <Step title="Enter New Username">
+    Type your desired username in the **Username** field.
+
+    As you type, TechCal checks availability in real-time:
+    - ✅ Green checkmark: Available
+    - ❌ Red X: Taken or invalid
+  </Step>
+
+  <Step title="Save Changes">
+    Click **Save**. Your new username takes effect immediately.
+
+    <Warning>
+      Changing your username breaks old profile links. Update any places where you've shared your profile URL.
+    </Warning>
+  </Step>
+</Steps>
+
+### Updating Your Headline
+
+1. Go to **Settings** → **Social**
+2. Edit the **Headline** field (max 120 characters)
+3. Click **Save**
+
+<Tip>
+  Update your headline whenever your role or goals change. Keep it fresh and accurate.
+</Tip>
+
+### Changing Privacy Settings
+
+1. Go to **Settings** → **Social**
+2. Toggle **Profile Visibility** (Private/Public)
+3. Toggle **Show Attendance** (ON/OFF)
+4. Click **Save**
+
+## Username Validation
+
+### Real-Time Checking
+
+As you type a username, TechCal checks:
+
+1. **Pattern validation**: Does it meet requirements?
+2. **Reserved check**: Is it a reserved username?
+3. **Availability**: Is it already taken?
+
+**Feedback indicators**:
+
+- 🔄 **Checking...**: Validating with server
+- ✅ **Available**: You can use this username
+- ❌ **Taken**: Already claimed by another user
+- ❌ **Invalid**: Doesn't meet requirements
+- ❌ **Reserved**: Protected username
+
+<Note>
+  Username checks are debounced (350ms delay) to avoid excessive API calls while typing.
+</Note>
+
+### Case Insensitivity
+
+Usernames are case-insensitive for **uniqueness** but **preserve case** for display:
+
+- You claim: `JohnSmith`
+- Display shows: `JohnSmith`
+- URLs work with: `/u/johnsmith`, `/u/JohnSmith`, `/u/JOHNSMITH` (all equivalent)
+- No one else can claim: `johnsmith`, `JOHNSMITH`, etc.
+
+## Profile URLs & Sharing
+
+### Deep Links
+
+Your profile URL structure:
+
+```
+https://techcal.com/u/yourname
+```
+
+**Shareable**:
+- ✅ LinkedIn posts and profiles
+- ✅ Twitter/X bio
+- ✅ GitHub README
+- ✅ Personal website
+- ✅ Email signatures
+
+### SEO & Search Engines
+
+Public profiles are **indexable** by search engines:
+
+- Title tag: "[Your Name] (@username) - TechCal"
+- Meta description: Your headline
+- Open Graph tags: Previews on social media
+
+<Tip>
+  If you Google your username + "TechCal", your profile should appear in results within a few days.
+</Tip>
+
+### Copying Profile Links
+
+On your profile page, click the **Share** button to:
+
+- Copy link to clipboard
+- Share on Twitter
+- Share on LinkedIn
+
+## Following & Followers
+
+### Viewing Your Network
+
+From your profile, click:
+
+- **Followers**: People who follow you
+- **Following**: People you follow
+
+Both lists are **paginated** (20 per page) with Load More buttons.
+
+### Follower Visibility
+
+**Who can see your followers/following lists?**
+
+- **Public profiles**: Everyone can see
+- **Private profiles**: Only you can see
+
+<Note>
+  You can't hide your follower/following counts if your profile is public. This is intentional for transparency.
+</Note>
+
+## Privacy & Safety
+
+### Who Can See Your Profile?
+
+Depends on your settings:
+
+| Your Setting | Who Can View |
+|--------------|-------------|
+| **Private profile** | Only you |
+| **Public profile + Attendance OFF** | Everyone sees profile, but not which events you attend |
+| **Public profile + Attendance ON** | Everyone sees profile and event attendance |
+
+### Blocking Users
+
+If someone is harassing you or you want to avoid them:
+
+1. Visit their profile
+2. Click **⋯** (three dots) menu
+3. Select **Block User**
+
+When blocked:
+- ❌ They can't see your profile (even if public)
+- ❌ You can't see their profile
+- ❌ Any follow relationships are removed
+- ❌ You won't appear in each other's searches
+
+<Warning>
+  Blocking is mutual and permanent until you unblock them.
+</Warning>
+
+### Unblocking
+
+To unblock:
+
+1. Go to **Settings** → **Social** → **Blocked Users**
+2. Find the user
+3. Click **Unblock**
+
+They'll become visible again, but you'll need to re-follow each other.
+
+## Profile Analytics (Coming Soon)
+
+Future features:
+
+- **Profile views**: How many people viewed your profile this month
+- **Follower growth**: Chart of follower count over time
+- **Top events**: Which attended events generated the most profile visits
+
+<Note>
+  Analytics will be available to users with public profiles only.
+</Note>
+
+## Tips for Optimizing Your Profile
+
+<AccordionGroup>
+  <Accordion title="Choose a Professional Username">
+    Use your real name or a recognizable professional handle. Avoid numbers unless they're meaningful (e.g., graduation year).
+
+    **Good**: `sarah_chen`, `alexkumar`, `johnsmith2026`
+
+    **Avoid**: `techguy123`, `user456`, `ilovecoding`
+  </Accordion>
+
+  <Accordion title="Write a Compelling Headline">
+    Treat it like a Twitter bio. Make it:
+    - **Specific**: "React Developer" not just "Developer"
+    - **Informative**: Include your stack or interests
+    - **Actionable**: Add "Open to opportunities" if job hunting
+  </Accordion>
+
+  <Accordion title="Enable Attendance Sharing">
+    If you're actively networking, show which events you attend. This helps people find common ground and plan meetups.
+  </Accordion>
+
+  <Accordion title="Keep Your Profile Updated">
+    Update your headline whenever:
+    - You change roles
+    - You learn a major new skill
+    - Your career goals shift
+  </Accordion>
+
+  <Accordion title="Link Your Profile Externally">
+    Add your TechCal profile link to:
+    - LinkedIn "Contact Info" section
+    - Twitter/X bio
+    - GitHub profile README
+    - Personal website footer
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="My profile URL returns 404">
+    **Possible causes**:
+    - Profile is set to Private
+    - Username is not set
+
+    **Solution**: Go to **Settings** → **Social** and:
+    1. Set a username
+    2. Set Profile Visibility to **Public**
+  </Accordion>
+
+  <Accordion title="Username says 'Taken' but I can't find the user">
+    **Cause**: The username is taken by a private profile or deleted account.
+
+    **Solution**: Choose a different username. Usernames are permanent and can't be reclaimed.
+  </Accordion>
+
+  <Accordion title="I can't follow anyone">
+    **Cause**: Your Trust Level is 0 (new account).
+
+    **Solution**:
+    1. Wait 7 days after account creation
+    2. Complete career onboarding
+
+    Check your Trust Level in **Settings** → **Social**.
+  </Accordion>
+
+  <Accordion title="Events not showing on my profile">
+    **Cause**: Attendance sharing is disabled.
+
+    **Solution**: Go to **Settings** → **Social** → **Show Attendance** and toggle **ON**.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Community Overview" icon="users" href="/community/overview">
+    Learn about social features, following, and networking
+  </Card>
+  <Card title="Hackathon Teams" icon="code" href="/community/hackathons">
+    Use your profile to form teams and collaborate
+  </Card>
+</CardGroup>

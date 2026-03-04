@@ -1,0 +1,466 @@
+---
+title: "Calendar & Event Management"
+description: "Manage your tracked events with FullCalendar integration, quick filters, deep linking, and external calendar sync"
+---
+
+## Overview
+
+The **Calendar** page gives you a visual timeline of all events you've saved ("tracked"). It uses FullCalendar for an intuitive month/week/day view with drag-and-drop, filtering, and seamless integration with Google Calendar and Outlook.
+
+![Calendar View](/images/calendar-view.png)
+
+## Calendar Views
+
+### Desktop Layout
+
+The desktop experience uses a **two-panel layout**:
+
+1. **Left Panel**: FullCalendar month/week/day views with event blocks
+2. **Right Drawer**: Event details panel (opens when clicking an event)
+
+The calendar automatically adjusts to your screen size, hiding less critical UI elements on narrower displays.
+
+### Mobile Layout
+
+On mobile, the calendar adapts to a **responsive single-column**:
+- Simplified month view optimized for touch
+- Tap any event to view full details in a bottom sheet
+- Swipe gestures for navigating months
+
+## Calendar Controls
+
+### View Switcher
+
+Toggle between different time spans:
+
+<CardGroup cols={3}>
+  <Card title="Month View" icon="calendar">
+    See all events in a monthly grid. Best for planning weeks ahead.
+  </Card>
+  <Card title="Week View" icon="calendar-week">
+    Detailed 7-day schedule with hourly time slots. Great for busy weeks.
+  </Card>
+  <Card title="Day View" icon="calendar-day">
+    Single-day agenda with precise timing. Ideal for event-heavy days.
+  </Card>
+</CardGroup>
+
+### Navigation
+
+- **Previous/Next buttons**: Navigate backward or forward (month, week, or day depending on view)
+- **Today button**: Jump to current date
+- **Date picker**: Click the current date label to open a calendar picker and jump to any date
+
+<Tip>
+  Use keyboard shortcuts: **Left/Right arrows** to navigate, **T** to return to today.
+</Tip>
+
+## Quick Filters
+
+At the top of the calendar, you'll see quick filter chips:
+
+### All Events
+Shows every tracked event regardless of category or format.
+
+### This Week
+Narrows view to events starting in the next 7 days. Useful for focusing on immediate commitments.
+
+### Free Events
+Displays only zero-cost events. Great for budget-conscious planning.
+
+### Virtual Only
+Shows online-only events. Perfect when you want to attend from home.
+
+### In-Person Only
+Filters to physical location events. Useful when planning travel.
+
+### By Category
+Filter by event type:
+- Conferences
+- Hackathons
+- Meetups
+- Workshops
+- Career Fairs
+
+<Note>
+  Quick filters are **additive**. Selecting "Virtual Only" + "Conferences" shows only virtual conferences.
+</Note>
+
+## Advanced Filters Sidebar
+
+Click the **Filters** button (funnel icon) to open the advanced filters panel:
+
+### Location Filter
+
+Filter events by specific cities or countries:
+- Type to search locations
+- Select multiple locations (OR logic)
+- Virtual events appear in all location filters unless "In-person only" format is selected
+
+### Date Range Filter
+
+Set custom date boundaries:
+- Start date: Earliest event to show
+- End date: Latest event to show
+- Or use presets: This Month, Next 3 Months, This Year
+
+<Tip>
+  Use date range filters to plan for conference season (e.g., March-May) or focus on near-term events (next 30 days).
+</Tip>
+
+### Format Filter
+
+- **All**: Virtual, in-person, and hybrid
+- **Virtual**: Online-only
+- **In-person**: Physical venues
+- **Hybrid**: Both virtual and in-person options
+
+### Cost Filter
+
+- **All**: Free and paid events
+- **Free**: Zero-cost only
+- **Paid**: Any paid event
+
+### Difficulty Filter
+
+Match events to your skill level:
+- **Beginner**: Intro sessions, 101 workshops
+- **Intermediate**: Standard professional content
+- **Advanced**: Expert-level talks
+
+### My Network Filter
+
+Toggle to show only events where people you follow are attending. Great for coordinating meetups.
+
+<Note>
+  Network filtering requires you to follow other users. Visit the [Community page](/community/overview) to build your network.
+</Note>
+
+## Event Blocks on Calendar
+
+Each event appears as a colored block on the calendar:
+
+### Color Coding
+
+Events are color-coded by category:
+- **Blue**: Conferences
+- **Purple**: Hackathons
+- **Green**: Meetups
+- **Orange**: Workshops
+- **Red**: Career Fairs
+
+### Event Block Information
+
+**On hover (desktop)**, the event block shows:
+- Event title
+- Start time
+- Location or "Virtual"
+- Quick action icons (View, Edit, Remove)
+
+**On click**, the event detail panel opens in the right sidebar (desktop) or bottom sheet (mobile).
+
+### Multi-Day Events
+
+Events spanning multiple days appear as:
+- **Continuous blocks** across dates in month view
+- **Full-height blocks** in week/day view with start and end times
+
+<Tip>
+  Multi-day conferences show duration clearly. Hover to see exact start and end times.
+</Tip>
+
+## Event Detail Panel
+
+Click any calendar event to open details:
+
+### Tabs
+
+1. **Overview**: Event description, agenda, speakers
+2. **Career Impact**: Why this event matters for your career (personalized)
+3. **Who's Going**: Other TechCal users attending
+
+### Quick Actions
+
+At the top of the detail panel:
+
+<CardGroup cols={2}>
+  <Card title="Register" icon="arrow-up-right-from-square">
+    Opens the event's registration page in a new tab
+  </Card>
+  <Card title="Add to Calendar" icon="calendar-plus">
+    Exports event as `.ics` file for manual import
+  </Card>
+  <Card title="Share" icon="share-nodes">
+    Copy shareable link to clipboard
+  </Card>
+  <Card title="Untrack" icon="bookmark-slash">
+    Remove event from your calendar
+  </Card>
+</CardGroup>
+
+### Overview Tab
+
+- **Date & Time**: Start and end times in your timezone
+- **Location**: Venue address with Google Maps link (in-person) or "Virtual" with platform link
+- **Organizer**: Event host with logo
+- **Description**: Full event details (markdown formatted)
+- **Speakers**: Speaker bios and photos
+- **Agenda**: Session schedule with times
+- **Tags**: Relevant topics
+
+### Career Impact Tab
+
+See your personalized **Career Impact Score** (0-100) with breakdown:
+
+- **Skill Relevance**: Matched skills from your profile
+- **Career Stage Match**: Difficulty alignment
+- **Networking Value**: Opportunity to meet relevant people
+- **Industry Relevance**: Fit with your target industry
+
+Each component shows a sub-score and explanation.
+
+<Tip>
+  Use Career Impact scores to prioritize which events to attend when you have scheduling conflicts.
+</Tip>
+
+### Who's Going Tab
+
+See attendees (respects privacy settings):
+
+- **Total count**: All TechCal users tracking this event
+- **Visible attendees**: Users with public profiles and attendance sharing enabled
+- **Network count**: People you follow who are attending
+
+Each attendee card shows:
+- Avatar and name
+- Username and headline
+- Relationship badge ("Mutual follow", etc.)
+- Follow button
+
+<Note>
+  If you don't see attendees, it means either:
+  - No one else has tracked this event
+  - Other users have private profiles or disabled attendance sharing
+</Note>
+
+## Deep Linking to Dates
+
+The calendar URL updates as you navigate:
+
+```
+https://techcal.com/calendar?date=2026-03-15
+```
+
+This means you can:
+- **Bookmark specific dates**: Save a URL to return to a specific week/month
+- **Share calendar views**: Send a link to show someone events on a particular date
+- **Browser back/forward**: Navigate calendar history with browser buttons
+
+<Tip>
+  Deep linking works across all views (month/week/day). The URL remembers your view preference.
+</Tip>
+
+## Calendar Sync (External Calendars)
+
+Sync your tracked events to Google Calendar, Outlook, or Apple Calendar:
+
+<Steps>
+  <Step title="Go to Calendar Settings">
+    Click **Settings** → **Connect Calendar** in the main navigation.
+  </Step>
+
+  <Step title="Choose Your Calendar Provider">
+    Select:
+    - **Google Calendar**: OAuth authorization (recommended)
+    - **Outlook/Office 365**: Microsoft account login
+    - **Apple Calendar**: iCal feed URL
+  </Step>
+
+  <Step title="Authorize Access">
+    Grant TechCal permission to:
+    - Read your calendar (to detect conflicts)
+    - Write events (to sync tracked events)
+
+    <Warning>
+      TechCal only syncs events YOU track. We never modify or delete your existing calendar events.
+    </Warning>
+  </Step>
+
+  <Step title="Configure Sync Preferences">
+    Choose:
+    - **Sync frequency**: Real-time, hourly, or daily
+    - **Calendar destination**: Which calendar to sync to (if you have multiple)
+    - **Prefix**: Add "[TechCal]" to event titles for easy identification
+  </Step>
+
+  <Step title="Verify Sync">
+    Track a new event in TechCal, then check your external calendar. It should appear within 5 minutes (or based on your sync frequency).
+  </Step>
+</Steps>
+
+### Sync Behavior
+
+- **When you track an event**: It's added to your external calendar
+- **When you untrack an event**: It's removed from your external calendar
+- **When event details update**: Changes sync automatically
+- **When you mark attendance**: A note is added to the calendar event
+
+<Note>
+  Sync is **one-way** from TechCal to your external calendar. Changes you make in Google Calendar or Outlook won't reflect back to TechCal.
+</Note>
+
+## Conflict Detection
+
+If calendar sync is enabled, TechCal automatically detects scheduling conflicts:
+
+### Conflict Indicators
+
+- **Yellow warning badge** on event blocks that overlap with existing calendar events
+- **Conflict warning** in event detail panel: "This overlaps with [Other Event]"
+- **Filter option**: "No Conflicts" filter shows only events with no overlaps
+
+### Resolving Conflicts
+
+1. Click the conflicting event to view details
+2. See which events overlap in the **Conflicts** section
+3. Decide which to keep/remove
+4. Untrack the event you can't attend
+
+<Tip>
+  Use the **No Conflicts** quick filter before committing to new events to avoid double-booking.
+</Tip>
+
+## Exporting Events
+
+Export your tracked events for use outside TechCal:
+
+### Individual Event Export
+
+1. Open event detail panel
+2. Click **Add to Calendar**
+3. Download `.ics` file
+4. Import to any calendar app that supports iCal format
+
+### Bulk Export
+
+1. Go to **Settings** → **Calendar**
+2. Click **Export All Tracked Events**
+3. Download `.ics` file with all your tracked events
+4. Import to your preferred calendar app
+
+<Note>
+  Bulk export is useful for:
+  - Backing up your event list
+  - Migrating to a different calendar app
+  - Sharing your event schedule with someone
+</Note>
+
+## Mobile-Specific Features
+
+### Touch Gestures
+
+- **Swipe left/right**: Navigate to previous/next month
+- **Pinch**: Zoom in/out on week view (changes density)
+- **Tap and hold**: Quick actions menu (Register, Share, Untrack)
+
+### Bottom Sheet Event Details
+
+On mobile, event details open in a **bottom sheet** that slides up from the bottom:
+- Drag the sheet handle to adjust height (half-screen or full-screen)
+- Swipe down to dismiss
+- Swipe between events using left/right gestures
+
+### Responsive Quick Filters
+
+On narrow screens, quick filter chips scroll horizontally. Swipe the filter bar to see more options.
+
+## Keyboard Shortcuts (Desktop)
+
+<Note>
+  **Desktop only** - Keyboard shortcuts are not available on mobile devices.
+</Note>
+
+- **`T`**: Jump to Today
+- **`M`**: Switch to Month view
+- **`W`**: Switch to Week view
+- **`D`**: Switch to Day view
+- **`Left Arrow`**: Previous (month/week/day)
+- **`Right Arrow`**: Next (month/week/day)
+- **`F`**: Open filters sidebar
+- **`Esc`**: Close event detail panel
+- **`/`**: Focus search bar (if available)
+
+## Tips & Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Week View for Detailed Planning">
+    Month view is great for overview, but Week view shows exact times and durations. Switch to Week view when planning your schedule for busy weeks.
+  </Accordion>
+
+  <Accordion title="Enable Calendar Sync for Conflict Prevention">
+    Connect your Google or Outlook calendar to automatically detect conflicts with work meetings, personal events, and other commitments.
+  </Accordion>
+
+  <Accordion title="Color-Code with Categories">
+    Use the visual color coding to quickly identify event types. For example, all hackathons (purple) are easy to spot in a busy month.
+  </Accordion>
+
+  <Accordion title="Filter by 'This Week' on Mondays">
+    Start each week by reviewing upcoming events with the "This Week" filter. Set reminders for registration deadlines.
+  </Accordion>
+
+  <Accordion title="Track Events Early, Decide Later">
+    Don't hesitate to track interesting events even if you're unsure about attending. You can untrack later. Better to have reminders than miss registration.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Events not syncing to Google Calendar">
+    **Possible causes**:
+    - Calendar sync is not authorized
+    - Sync frequency is set to manual
+    - OAuth token expired
+
+    **Solution**:
+    1. Go to **Settings** → **Connect Calendar**
+    2. Click **Reconnect Google Calendar**
+    3. Re-authorize access
+  </Accordion>
+
+  <Accordion title="Event times are wrong">
+    **Cause**: Timezone is incorrect.
+
+    **Solution**: Go to **Settings** → **Profile** → **Timezone** and select your current timezone. Event times will update immediately.
+  </Accordion>
+
+  <Accordion title="Calendar view is too crowded">
+    **Solution**: Apply filters to reduce density:
+    - Filter by category (e.g., only Conferences)
+    - Set date range to next 30 days
+    - Use "Free Events" or budget filters
+  </Accordion>
+
+  <Accordion title="Can't find a tracked event">
+    **Possible causes**:
+    - Event is outside current date range
+    - Active filters are hiding it
+
+    **Solution**:
+    1. Click **Reset Filters**
+    2. Use Month view and navigate to the event's date
+    3. Or go to **Dashboard** → **Tracked Events** to see a full list
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Dashboard Analytics" icon="chart-line" href="/features/dashboard">
+    View your event attendance history and career progress
+  </Card>
+  <Card title="Event Discovery" icon="compass" href="/features/discovery">
+    Find new events to add to your calendar
+  </Card>
+</CardGroup>

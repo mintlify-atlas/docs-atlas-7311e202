@@ -1,80 +1,206 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quickstart Guide"
+description: "Get started with TechCal in under 5 minutes—create your account, complete onboarding, and discover your first event"
 ---
 
-## Get started in three steps
+## Create Your Account
 
-Get your documentation site running locally and make your first customization.
+<Steps>
+  <Step title="Sign Up">
+    Visit [techcal.com](https://techcal.com) and click **Sign Up** in the top right.
 
-### Step 1: Set up your local environment
+    You can sign up with:
+    - **Email**: Create a password and verify your email
+    - **Google**: One-click signup with your Google account
+    - **GitHub**: Connect your GitHub profile
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    <Note>
+      Using Google or GitHub is fastest—no email verification required.
+    </Note>
+  </Step>
 
-### Step 2: Deploy your changes
+  <Step title="Complete Your Profile">
+    After signup, you'll see the **Career Onboarding** wizard. This 5-step process helps TechCal personalize your event recommendations.
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ### Step 1: Career Basics
+    - **Current Role**: Your job title (e.g., "Software Engineer", "Product Manager")
+    - **Seniority**: Junior, Mid-level, Senior, or Lead
+    - **Industry**: Tech sector you work in (SaaS, FinTech, E-commerce, etc.)
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ### Step 2: Your Skills
+    - **Primary Skills**: What you're already good at (e.g., Python, React, AWS)
+    - **Skills to Learn**: What you want to improve or learn next
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    <Tip>
+      Add at least 3-5 skills in each category for the best recommendations.
+    </Tip>
 
-### Step 3: Go live
+    ### Step 3: Career Goals
+    Select your main objectives:
+    - Learn new technologies
+    - Advance to senior roles
+    - Switch to a new field
+    - Build your network
+    - Find a new job
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ### Step 4: Event Preferences
+    - **Budget**: How much you can spend on events (Free only, $0-100, $100-500, $500+, Unlimited)
+    - **Format**: Virtual, In-person, or Both
+    - **Event Types**: Conferences, hackathons, meetups, workshops, career fairs
 
-## Next steps
+    ### Step 5: Location & Timezone
+    - Set your timezone for accurate event times
+    - Add your city/country for location-based filtering
 
-Now that you have your docs running, explore these key features:
+    <Warning>
+      You can skip onboarding, but your recommendations won't be personalized. Complete it now for the best experience.
+    </Warning>
+  </Step>
+
+  <Step title="Explore the Discover Page">
+    You'll land on the **Discover** page—your personalized event feed.
+
+    ![Discover Workspace](/images/discover-workspace.png)
+
+    Here you'll see:
+    - **Event cards** with title, date, location, and format
+    - **Career Impact Score** (0-100) showing relevance to your profile
+    - **Quick filters** at the top (This Week, Free Events, Virtual Only, etc.)
+    - **Advanced filters** in the left sidebar
+  </Step>
+
+  <Step title="Find Your First Event">
+    Let's filter for a free, upcoming event:
+
+    1. Click **Free Events** in the quick filter bar
+    2. Scroll through results—events are sorted by Career Impact Score
+    3. Click any event card to view details
+
+    ### Understanding Event Details
+
+    The event detail panel shows:
+    - **Description**: What the event is about
+    - **Speakers**: Who's presenting
+    - **Agenda**: Schedule and sessions
+    - **Career Impact Breakdown**: Why this event is relevant to you
+    - **Who's Going**: Other TechCal users attending (if public profiles)
+
+    <Tip>
+      Look for the **Career Impact Explanation** to understand exactly how this event helps your career goals.
+    </Tip>
+  </Step>
+
+  <Step title="Save to Calendar">
+    Found an event you like? Save it to your calendar:
+
+    1. In the event detail panel, click **Track Event**
+    2. The event now appears in your **Calendar** tab and **Dashboard**
+    3. You'll get reminders before registration deadlines
+
+    ### Sync to External Calendar (Optional)
+
+    To add events to Google Calendar or Outlook:
+
+    1. Go to **Settings** → **Connect Calendar**
+    2. Authorize TechCal to access your calendar
+    3. All tracked events will sync automatically
+
+    <Note>
+      You can also export individual events as `.ics` files from the event detail view.
+    </Note>
+  </Step>
+</Steps>
+
+## Explore More Features
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Calendar View" icon="calendar" href="/features/calendar">
+    See all your tracked events in a monthly calendar layout with quick filters
+  </Card>
+  <Card title="Dashboard" icon="chart-line" href="/features/dashboard">
+    Track your career progress, skills learned, and networking growth
+  </Card>
+  <Card title="Hackathons" icon="code" href="/community/hackathons">
+    Join or create teams for hackathons. Collaborate with teammates in real-time.
+  </Card>
+  <Card title="Community" icon="users" href="/community/overview">
+    Follow other professionals, see who's attending events, and build your network
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Tips for Getting the Most from TechCal
+
+<AccordionGroup>
+  <Accordion title="Update Your Profile Regularly">
+    As you learn new skills or your goals change, update your career profile in **Settings** → **Career Profile**. This keeps your recommendations fresh and relevant.
+  </Accordion>
+
+  <Accordion title="Use the 'Near Me' Filter">
+    Click the **Near Me** quick filter to find local in-person events. TechCal uses your location to show nearby conferences and meetups.
+  </Accordion>
+
+  <Accordion title="Check 'Who's Going'">
+    Before attending an event, check the **Who's Going** section to see if anyone from your network will be there. Great for planning meetups!
+  </Accordion>
+
+  <Accordion title="Mark Attendance After Events">
+    After attending an event, mark it as **Attended** in your dashboard. This:
+    - Builds your career history
+    - Improves future recommendations
+    - Unlocks progress tracking features
+  </Accordion>
+
+  <Accordion title="Explore Different Event Types">
+    Don't just attend conferences. Try:
+    - **Meetups**: Great for local networking
+    - **Workshops**: Hands-on skill building
+    - **Hackathons**: Portfolio projects and teamwork
+    - **Career Fairs**: Job opportunities and company exposure
+  </Accordion>
+</AccordionGroup>
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Why am I seeing events outside my budget?">
+    Make sure you've set your budget preference in your profile. Go to **Settings** → **Career Profile** → **Budget Preference** and select your range. Then apply the budget filter in the Discover sidebar.
+  </Accordion>
+
+  <Accordion title="How do Career Impact Scores work?">
+    Career Impact Scores (0-100) are calculated based on:
+    - **Skill Relevance**: How well the event matches your skills and learning goals
+    - **Career Stage Match**: Appropriate difficulty for your seniority
+    - **Networking Value**: Opportunities to meet relevant people
+    - **Industry Relevance**: Alignment with your target industry
+
+    Higher scores mean the event is more relevant to YOUR specific career goals.
+  </Accordion>
+
+  <Accordion title="Can I use TechCal without completing onboarding?">
+    Yes, but you won't get personalized recommendations. Events will be sorted by popularity instead of career relevance. We strongly recommend completing your profile.
+  </Accordion>
+
+  <Accordion title="How do I change my timezone?">
+    Go to **Settings** → **Profile** → **Timezone**. Event times will update automatically based on your selection.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Now that you've found your first event, explore these features:
+
+<CardGroup cols={3}>
+  <Card title="Discovery Features" icon="compass" href="/features/discovery">
+    Master advanced filtering, search, and event discovery
+  </Card>
+  <Card title="Calendar Sync" icon="calendar-check" href="/features/calendar">
+    Set up calendar integration and manage your event schedule
+  </Card>
+  <Card title="Dashboard Analytics" icon="chart-bar" href="/features/dashboard">
+    Track your career growth and event attendance history
+  </Card>
+</CardGroup>
+
+<Card title="Need Help?" icon="question" href="mailto:support@techcal.com">
+  Contact our support team at support@techcal.com
+</Card>

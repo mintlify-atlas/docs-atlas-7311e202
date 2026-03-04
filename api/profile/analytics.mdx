@@ -1,0 +1,396 @@
+---
+title: "GET /api/dashboard/analytics"
+description: "Fetch comprehensive career analytics including goal progress, skill development, and networking insights"
+---
+
+## Overview
+
+The dashboard analytics API provides a comprehensive view of user career progress, including:
+- Goal completion tracking
+- Skill development over time
+- Networking statistics
+- Event engagement metrics
+- Recommendation performance
+
+<Note>
+Requires authentication and completed career onboarding.
+</Note>
+
+## Authentication
+
+Requires a valid Supabase authentication token in the request headers.
+
+```bash
+Authorization: Bearer <supabase_access_token>
+```
+
+## Rate Limiting
+
+- **Limit:** 20 requests per minute per user
+- **Window:** Sliding window (1 minute)
+- **Response:** HTTP 429 if rate limit exceeded
+
+## Request
+
+### HTTP Method
+
+```
+GET /api/dashboard/analytics
+```
+
+### Query Parameters
+
+<ParamField query="includeRecommendations" type="boolean" default="false">
+  Include personalized event recommendations in response
+</ParamField>
+
+<ParamField query="eventLimit" type="number" default="50">
+  Number of upcoming events to analyze (max 100)
+</ParamField>
+
+## Response
+
+### Success Response (200)
+
+<ResponseField name="success" type="boolean" required>
+  Always `true` for successful requests
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  <Expandable title="data properties">
+    <ResponseField name="analytics" type="object" required>
+      Comprehensive analytics object
+      
+      <Expandable title="Analytics schema">
+        <ResponseField name="goalProgress" type="object">
+          Career goal tracking
+          
+          <ResponseField name="totalGoals" type="number">
+            Number of active career goals
+          </ResponseField>
+          
+          <ResponseField name="completedGoals" type="number">
+            Goals marked as completed
+          </ResponseField>
+          
+          <ResponseField name="inProgressGoals" type="number">
+            Goals with active progress
+          </ResponseField>
+          
+          <ResponseField name="goalBreakdown" type="object[]">
+            Per-goal progress details
+            
+            <ResponseField name="goal" type="string">
+              Goal name (e.g., `skill-development`)
+            </ResponseField>
+            
+            <ResponseField name="progress" type="number">
+              Progress percentage (0-100)
+            </ResponseField>
+            
+            <ResponseField name="eventsAttended" type="number">
+              Events attended for this goal
+            </ResponseField>
+            
+            <ResponseField name="skillsGained" type="string[]">
+              Skills learned
+            </ResponseField>
+          </ResponseField>
+        </ResponseField>
+        
+        <ResponseField name="skillDevelopment" type="object">
+          Skill learning progress
+          
+          <ResponseField name="totalSkills" type="number">
+            Total skills in learning list
+          </ResponseField>
+          
+          <ResponseField name="skillsInProgress" type="number">
+            Skills with active learning events
+          </ResponseField>
+          
+          <ResponseField name="eventsPerSkill" type="object">
+            Map of skill name to event count
+          </ResponseField>
+          
+          <ResponseField name="recentlyGained" type="string[]">
+            Skills added in last 30 days
+          </ResponseField>
+        </ResponseField>
+        
+        <ResponseField name="networking" type="object">
+          Networking statistics
+          
+          <ResponseField name="totalConnections" type="number">
+            Network connections made
+          </ResponseField>
+          
+          <ResponseField name="eventsAttended" type="number">
+            Networking events attended
+          </ResponseField>
+          
+          <ResponseField name="upcomingOpportunities" type="number">
+            Future networking events bookmarked
+          </ResponseField>
+          
+          <ResponseField name="connectionGrowth" type="number">
+            New connections this month
+          </ResponseField>
+        </ResponseField>
+        
+        <ResponseField name="eventEngagement" type="object">
+          Event interaction metrics
+          
+          <ResponseField name="totalBookmarked" type="number">
+            Total bookmarked events
+          </ResponseField>
+          
+          <ResponseField name="totalAttended" type="number">
+            Events marked as attended
+          </ResponseField>
+          
+          <ResponseField name="upcomingEvents" type="number">
+            Future bookmarked events
+          </ResponseField>
+          
+          <ResponseField name="attendanceRate" type="number">
+            Percentage of bookmarked events attended
+          </ResponseField>
+          
+          <ResponseField name="byFormat" type="object">
+            Breakdown by event format (virtual/in-person/hybrid)
+          </ResponseField>
+          
+          <ResponseField name="byCategory" type="object">
+            Breakdown by event category
+          </ResponseField>
+        </ResponseField>
+        
+        <ResponseField name="recommendations" type="object">
+          Recommendation performance
+          
+          <ResponseField name="totalRecommended" type="number">
+            Events recommended in last 30 days
+          </ResponseField>
+          
+          <ResponseField name="recommendationsBookmarked" type="number">
+            Recommended events bookmarked
+          </ResponseField>
+          
+          <ResponseField name="recommendationCTR" type="number">
+            Click-through rate (0-1)
+          </ResponseField>
+          
+          <ResponseField name="avgRecommendationScore" type="number">
+            Average career impact score
+          </ResponseField>
+        </ResponseField>
+        
+        <ResponseField name="timeline" type="object[]">
+          Chronological event timeline
+          
+          <ResponseField name="date" type="string">
+            Event date (ISO 8601)
+          </ResponseField>
+          
+          <ResponseField name="eventId" type="string">
+            Event UUID
+          </ResponseField>
+          
+          <ResponseField name="title" type="string">
+            Event title
+          </ResponseField>
+          
+          <ResponseField name="type" type="string">
+            Event type/category
+          </ResponseField>
+          
+          <ResponseField name="status" type="string">
+            `bookmarked`, `attending`, `attended`, `cancelled`
+          </ResponseField>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="recommendations" type="Event[]">
+      Personalized event recommendations (if `includeRecommendations=true`)
+    </ResponseField>
+    
+    <ResponseField name="stats" type="object" required>
+      <ResponseField name="processingTimeMs" type="number">
+        Server processing time
+      </ResponseField>
+      
+      <ResponseField name="eventsProcessed" type="number">
+        Number of upcoming events analyzed
+      </ResponseField>
+      
+      <ResponseField name="trackedEventsCount" type="number">
+        Total user event interactions
+      </ResponseField>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Error Responses
+
+<CodeGroup>
+```json 401 Unauthorized
+{
+  "success": false,
+  "error": "Authentication required"
+}
+```
+
+```json 404 Not Found
+{
+  "success": false,
+  "error": "User profile not found"
+}
+```
+
+```json 429 Rate Limited
+{
+  "success": false,
+  "error": "Too many requests. Please try again later."
+}
+```
+</CodeGroup>
+
+## Examples
+
+### Basic Analytics Request
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://kurecal.app/api/dashboard/analytics" \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+const response = await fetch('/api/dashboard/analytics', {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+
+const { data } = await response.json();
+console.log('Goal Progress:', data.analytics.goalProgress);
+console.log('Skills Learning:', data.analytics.skillDevelopment);
+```
+</CodeGroup>
+
+### Analytics with Recommendations
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://kurecal.app/api/dashboard/analytics?includeRecommendations=true&eventLimit=20" \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+const response = await fetch(
+  '/api/dashboard/analytics?includeRecommendations=true&eventLimit=20',
+  { headers: { 'Authorization': `Bearer ${token}` } }
+);
+
+const { data } = await response.json();
+console.log(`Processing time: ${data.stats.processingTimeMs}ms`);
+console.log(`Recommendations: ${data.recommendations?.length ?? 0}`);
+```
+</CodeGroup>
+
+### Display Goal Progress
+
+<CodeGroup>
+```typescript TypeScript
+const { data } = await fetch('/api/dashboard/analytics', {
+  headers: { 'Authorization': `Bearer ${token}` }
+}).then(r => r.json());
+
+const { goalProgress } = data.analytics;
+
+console.log(`Total Goals: ${goalProgress.totalGoals}`);
+console.log(`Completed: ${goalProgress.completedGoals}`);
+console.log(`In Progress: ${goalProgress.inProgressGoals}`);
+
+goalProgress.goalBreakdown.forEach(goal => {
+  console.log(`${goal.goal}: ${goal.progress}% (${goal.eventsAttended} events)`);
+});
+```
+</CodeGroup>
+
+## Analytics Computation
+
+### Goal Progress Calculation
+
+Goal progress is calculated based on:
+- Events attended that align with goal
+- Skills gained related to goal
+- Time elapsed since goal set
+- Completion criteria (goal-specific)
+
+### Skill Development Tracking
+
+Skill learning progress tracks:
+- Events attended for each skill
+- Practice time logged (if available)
+- Proficiency level changes
+- Peer comparison (optional)
+
+### Networking Metrics
+
+Networking statistics include:
+- Direct connections made at events
+- Follow relationships established
+- Circle memberships joined
+- Event attendance overlap with network
+
+## Cache Strategy
+
+### Cache Headers
+
+```
+Cache-Control: private, max-age=120, stale-while-revalidate=300
+X-Data-Freshness: 120s
+X-Cache-Strategy: analytics-optimized
+X-Processing-Time: 347
+```
+
+### Cache Invalidation
+
+Analytics cache is invalidated when:
+- User tracks/untracks an event
+- Career profile is updated
+- Goal completion status changes
+- Event attendance is marked
+
+<Tip>
+Cache TTL is 2 minutes with 5-minute stale-while-revalidate window for optimal performance.
+</Tip>
+
+## Performance Considerations
+
+### Processing Time
+
+- **Typical:** 200-500ms
+- **With recommendations:** 400-800ms
+- **Cold start:** 800-1200ms (first request after cache expiry)
+
+### Optimization Strategies
+
+- Analytics computed using database aggregation functions
+- Tracked events fetched in lightweight mode (minimal fields)
+- Parallel computation of independent metrics
+- Incremental updates for frequently accessed data
+
+### Rate Limiting
+
+To avoid hitting rate limits:
+- Cache analytics data on client for 2+ minutes
+- Use `includeRecommendations=false` when only analytics needed
+- Fetch analytics once per dashboard visit, not per component mount
+
+## Related Endpoints
+
+- [GET /api/profile/career](/api/profile/career) - Career profile used for analytics
+- [POST /api/events/tracked](/api/events/tracked) - Track events to update analytics
+- [GET /api/events/recommendations](/api/events/recommendations) - Get recommendations separately

@@ -1,0 +1,221 @@
+---
+title: Local Development Setup
+description: Get TechCal running locally with prerequisites, dependencies, database configuration, and development server
+---
+
+This guide walks you through setting up TechCal for local development.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+<Steps>
+  <Step title="Node.js 20.9+">
+    TechCal requires Node.js 20.9 or higher (LTS recommended).
+    
+    ```bash
+    node --version
+    # Should output v20.9.0 or higher
+    ```
+  </Step>
+
+  <Step title="npm Package Manager">
+    npm is included with Node.js. Verify installation:
+    
+    ```bash
+    npm --version
+    ```
+  </Step>
+
+  <Step title="Supabase Account">
+    Create a free account at [supabase.com](https://supabase.com) and set up a new project.
+    
+    You'll need:
+    - Project URL
+    - Anon (public) key
+    - Service role key (for server-side operations)
+  </Step>
+</Steps>
+
+## Clone the Repository
+
+Clone the TechCal source code:
+
+```bash
+git clone <repository-url>
+cd tech-cal
+```
+
+## Install Dependencies
+
+Install all required packages:
+
+```bash
+npm install
+```
+
+This will install all dependencies defined in `package.json`, including:
+- Next.js 15 (App Router)
+- React 19
+- Supabase client libraries
+- UI libraries (Tailwind, Radix UI, MUI)
+- Testing frameworks (Vitest, Playwright)
+- And more
+
+## Database Setup
+
+<Steps>
+  <Step title="Run Supabase Migrations">
+    Apply all database migrations to set up tables, functions, and policies:
+    
+    ```bash
+    supabase migration up
+    ```
+    
+    This creates the necessary database schema for:
+    - User profiles and authentication
+    - Events and recommendations
+    - Analytics and telemetry
+    - Ingestion pipeline
+    - Social features (following, blocking)
+  </Step>
+
+  <Step title="(Optional) Set Admin User">
+    If you need admin access to the ingestion moderation dashboard:
+    
+    1. Get your user UUID from Supabase Dashboard → Authentication → Users
+    2. Run this SQL query:
+    
+    ```sql
+    UPDATE profiles SET is_admin = TRUE WHERE id = 'YOUR_UUID';
+    ```
+    
+    See `docs/SET_ADMIN_USER.md` in the source repository for detailed instructions.
+  </Step>
+</Steps>
+
+## Configure Environment Variables
+
+Create a `.env.local` file in the project root with your Supabase credentials:
+
+```bash .env.local
+# Required - Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Required for Ingestion Cron Jobs
+CRON_SECRET=generate_with_openssl_rand_hex_32
+
+# Optional - Feature Toggles
+NEXT_PUBLIC_ENABLE_BEHAVIORAL_BOOST=true
+NEXT_PUBLIC_ENABLE_DIVERSITY_ENHANCEMENT=true
+
+# Optional - Scoring Strategy
+DISCOVERY_SCORING=server
+DISCOVERY_RERANK=advanced
+```
+
+<Note>
+  See the [Environment Variables](/development/environment) page for a complete reference of all available configuration options.
+</Note>
+
+## Run Development Server
+
+<Tabs>
+  <Tab title="Standard Mode">
+    Start the development server:
+    
+    ```bash
+    npm run dev
+    ```
+    
+    The app will be available at [http://localhost:3000](http://localhost:3000).
+  </Tab>
+
+  <Tab title="Turbo Mode (Experimental)">
+    For faster compilation with Next.js Turbopack:
+    
+    ```bash
+    npm run dev:turbo
+    ```
+    
+    <Warning>
+      Turbo mode is experimental and may have compatibility issues with some features.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Verify Installation
+
+<Steps>
+  <Step title="Access the Application">
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
+  </Step>
+
+  <Step title="Complete Onboarding">
+    Protected routes require:
+    1. Supabase authentication (sign up/sign in)
+    2. Completion of the onboarding flow at `/onboarding/career`
+    
+    The onboarding captures:
+    - Current role and career stage
+    - Professional goals
+    - Skills and interests
+    - Event preferences
+  </Step>
+
+  <Step title="Explore Core Features">
+    After onboarding, you can access:
+    - `/discover` - Personalized event recommendations
+    - `/calendar` - Your event calendar
+    - `/dashboard` - Career analytics and progress
+    - `/community` - Professional networking
+  </Step>
+</Steps>
+
+## Common Issues
+
+### Port 3000 Already in Use
+
+If port 3000 is occupied, Next.js will automatically try port 3001, 3002, etc. Or specify a custom port:
+
+```bash
+PORT=3001 npm run dev
+```
+
+### Database Connection Errors
+
+Verify your Supabase credentials in `.env.local`:
+- URL should be in format: `https://your-project.supabase.co`
+- Keys should be copied exactly from Supabase dashboard
+- Service role key is required for server-side operations
+
+### Missing Dependencies
+
+If you see module errors, try clearing cache and reinstalling:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="gear" href="/development/environment">
+    Configure all environment variables and feature flags
+  </Card>
+  
+  <Card title="Testing" icon="flask" href="/development/testing">
+    Run unit and integration tests with Vitest
+  </Card>
+  
+  <Card title="Project Structure" icon="folder-tree" href="/architecture/overview">
+    Understand the codebase organization
+  </Card>
+  
+  <Card title="Testing Guide" icon="flask" href="/development/testing">
+    Learn how to write and run tests
+  </Card>
+</CardGroup>

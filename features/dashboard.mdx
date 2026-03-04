@@ -1,0 +1,503 @@
+---
+title: "Career Dashboard & Analytics"
+description: "Track your career progress with goal insights, skill growth analytics, networking metrics, and event timeline visualizations"
+---
+
+## Overview
+
+Your **Dashboard** is a comprehensive view of your career development through events. It tracks:
+
+- **Goal Progress**: How events align with your career objectives
+- **Skill Growth**: Technical and soft skills learned from attended events
+- **Networking Insights**: Connections made and network expansion
+- **Event Timeline**: Visual history of your event attendance
+- **Career Impact Trends**: How your career-relevant event attendance has evolved
+
+![Dashboard Overview](/images/dashboard-overview.png)
+
+## Dashboard Layout
+
+### Desktop View
+
+The dashboard uses a **responsive grid layout** with cards:
+
+- **Header Section**: Welcome message, quick stats
+- **Focus Hero Card**: Your top priority goal with progress
+- **Analytics Grid**: 2-3 column layout with metric cards
+- **Timeline Section**: Chronological event history
+- **Insights Panel**: AI-generated career insights (coming soon)
+
+### Mobile View
+
+On mobile, cards stack vertically in order of priority:
+
+1. Focus Hero Card
+2. Career Progress
+3. Learning Progress
+4. Event Pipeline
+5. Timeline
+
+## Header Section
+
+### Welcome Message
+
+Personalized greeting based on time of day and recent activity:
+
+- **Morning**: "Good morning, [Name]! You have 3 events this week."
+- **Afternoon**: "Welcome back, [Name]! 2 new events match your profile."
+- **Evening**: "Good evening, [Name]! Here's your weekly progress."
+
+### Quick Stats Bar
+
+At-a-glance metrics:
+
+<CardGroup cols={4}>
+  <Card title="Events Attended" icon="calendar-check">
+    Total events you've marked as attended
+  </Card>
+  <Card title="Upcoming Events" icon="calendar-days">
+    Tracked events happening in the next 30 days
+  </Card>
+  <Card title="Network Size" icon="users">
+    People you follow + followers
+  </Card>
+  <Card title="Career Impact" icon="chart-line">
+    Average impact score of attended events
+  </Card>
+</CardGroup>
+
+## Focus Hero Card
+
+### Your Primary Goal
+
+The Focus Hero Card highlights your **top career goal** (set in profile) with:
+
+- **Goal title**: E.g., "Learn Machine Learning"
+- **Progress bar**: Percentage toward completion
+- **Events contributing**: Count of events aligned with this goal
+- **Next milestone**: What you need to do next
+
+**Example:**
+
+> 🎯 **Learn Machine Learning**
+>
+> Progress: 60% (6 of 10 events)
+>
+> ✅ Attended: Intro to ML Workshop, TensorFlow Summit
+>
+> 📅 Upcoming: NeurIPS Conference, PyTorch Meetup
+>
+> **Next**: Attend 4 more ML events to reach your goal
+
+<Tip>
+  You can change your focus goal in **Settings** → **Career Profile** → **Primary Goal**.
+</Tip>
+
+## Career Progress Card
+
+### Goal Breakdown
+
+Shows all your career goals with progress:
+
+<Tabs>
+  <Tab title="Learn New Technologies">
+    - **Total events**: 12 attended
+    - **Skills learned**: React, TypeScript, Docker
+    - **Confidence growth**: +35%
+  </Tab>
+  <Tab title="Advance to Senior Role">
+    - **Leadership events**: 4 attended
+    - **Skills gained**: Team management, Architecture design
+    - **Progress**: 45% toward goal
+  </Tab>
+  <Tab title="Build Your Network">
+    - **Networking events**: 8 attended
+    - **Connections made**: 23 people
+    - **Active relationships**: 18 ongoing
+  </Tab>
+</Tabs>
+
+### Goal Insights
+
+AI-generated suggestions for achieving goals faster:
+
+> 💡 **Tip**: You're close to completing "Learn New Technologies"! Attend 2 more workshops in React or TypeScript this month to hit your milestone.
+
+<Note>
+  Goal insights are generated weekly based on your event attendance patterns and profile updates.
+</Note>
+
+## Learning Progress Card
+
+### Skill Growth Timeline
+
+Visual timeline showing skills you've learned or reinforced:
+
+**Example:**
+
+```
+March 2026
+✅ React Advanced Patterns (Workshop)
+✅ GraphQL API Design (Conference Talk)
+
+February 2026
+✅ TypeScript Best Practices (Meetup)
+✅ Docker Containerization (Workshop)
+
+January 2026
+✅ AWS Lambda Intro (Online Workshop)
+```
+
+Each entry shows:
+- Skill name
+- Event where you learned it
+- Date attended
+- Proficiency level gained (Beginner, Intermediate, Advanced)
+
+### Skill Proficiency Chart
+
+Bar chart showing your self-assessed proficiency in each skill:
+
+- **Beginner** (1-2 events): Yellow bar
+- **Intermediate** (3-5 events): Blue bar
+- **Advanced** (6+ events): Green bar
+
+<Tip>
+  Click any skill bar to see all events where you practiced that skill.
+</Tip>
+
+### Learning Velocity
+
+Metric showing how quickly you're acquiring new skills:
+
+> **Learning Velocity**: 2.5 skills/month
+>
+> 👍 You're 40% faster than your 6-month average!
+
+## Networking Insights Card
+
+### Network Growth Graph
+
+Line chart showing follower and following counts over time:
+
+- **X-axis**: Months (last 12 months)
+- **Y-axis**: Count of connections
+- **Lines**:
+  - Blue: People you follow
+  - Green: Your followers
+  - Purple: Mutual follows (intersection)
+
+### Connection Quality Metrics
+
+<CardGroup cols={3}>
+  <Card title="Mutual Follows" icon="user-group">
+    Strong relationships (you follow each other)
+  </Card>
+  <Card title="Event Meetups" icon="handshake">
+    People you've met at events
+  </Card>
+  <Card title="Active Conversations" icon="comments">
+    Users you've chatted with in hackathon teams
+  </Card>
+</CardGroup>
+
+### Network Recommendations
+
+Suggested people to follow based on:
+- Attending similar events
+- Shared skills or interests
+- Mutual connections
+
+**Example:**
+
+> 👤 **Sarah Chen** - Senior ML Engineer
+>
+> Attended 5 of the same events as you. Interested in TensorFlow and computer vision.
+>
+> [Follow]
+
+## Event Pipeline Column
+
+Visual workflow showing events in different stages:
+
+### Pipeline Stages
+
+<Steps>
+  <Step title="Considering">
+    Events you've viewed but not yet tracked (from browsing history).
+  </Step>
+  <Step title="Tracked">
+    Events saved to your calendar. You plan to attend but haven't registered yet.
+  </Step>
+  <Step title="Registered">
+    Events you've officially signed up for. Registration confirmed.
+  </Step>
+  <Step title="Attending">
+    Events happening today or in the next 7 days.
+  </Step>
+  <Step title="Attended">
+    Past events you marked as attended.
+  </Step>
+</Steps>
+
+### Drag-and-Drop
+
+On desktop, you can drag event cards between pipeline stages to update status:
+
+- Drag from "Tracked" to "Registered" after you sign up
+- Drag from "Registered" to "Attended" after the event
+
+<Tip>
+  Pipeline management helps you stay organized and never miss registration deadlines.
+</Tip>
+
+## Recent Wins Card
+
+### Latest Achievements
+
+Celebrates recent milestones:
+
+- 🏆 **Skill Milestone**: Reached Advanced in React (6 events)
+- 🎓 **Learning Streak**: Attended 3 events this month
+- 🤝 **Networking Win**: Made 10 new connections at TechConf 2026
+- 📊 **Career Growth**: Attended first Senior-level conference
+
+<Note>
+  Achievements are unlocked automatically based on your activity. Check back weekly for new wins!
+</Note>
+
+## Career Impact Insights Card
+
+### Trend Analysis
+
+Line chart showing average Career Impact Score of events you've attended over time:
+
+- **X-axis**: Months
+- **Y-axis**: Average impact score (0-100)
+- **Trend line**: Shows if you're attending more relevant events over time
+
+**Insights:**
+
+> ⬆️ **Trending Up**: Your average impact score increased from 65 to 78 over the last 3 months. You're attending more career-aligned events!
+
+Or:
+
+> ➡️ **Stable**: Your impact scores are consistent (avg 72). Consider diversifying event types to explore new opportunities.
+
+### Top Performing Events
+
+List of your highest-impact attended events:
+
+1. **React Conf 2026** - Impact: 95 - Learned React 19, met hiring managers
+2. **AWS Summit** - Impact: 88 - Advanced cloud architecture skills
+3. **GraphQL Workshop** - Impact: 84 - Mastered API design patterns
+
+<Tip>
+  Use this list to identify what types of events give you the most career value, then filter discovery for similar events.
+</Tip>
+
+## Career Analytics Section
+
+### Overview Panel
+
+Detailed analytics dashboard (expandable section):
+
+#### Attendance Patterns
+
+- **Busiest months**: When you attend the most events
+- **Favorite categories**: Conferences (40%), Workshops (30%), Meetups (20%), Hackathons (10%)
+- **Format preferences**: Virtual (60%), In-person (40%)
+
+#### Career Alignment Score
+
+Average alignment between your profile and events attended:
+
+- **90-100**: Excellent - You're attending highly relevant events
+- **70-89**: Good - Mostly aligned with your goals
+- **50-69**: Fair - Consider refining your event selection
+- **Below 50**: Low - Review your career goals or event choices
+
+#### Recommendations Effectiveness
+
+How often you attend events with high Career Impact Scores:
+
+> **80%** of your attended events had impact scores above 70. Great job following recommendations!
+
+#### Time Investment
+
+Total hours spent at events:
+- **This month**: 12 hours
+- **This year**: 85 hours
+- **Average per event**: 3.5 hours
+
+### Skill Gap Analysis
+
+Compares skills you want to learn vs. skills you've practiced at events:
+
+**Example:**
+
+| Skill | Target | Events Attended | Gap |
+|-------|--------|-----------------|-----|
+| Machine Learning | Advanced | 6 events (Intermediate) | 4 more events needed |
+| Kubernetes | Intermediate | 2 events (Beginner) | 3 more events needed |
+| Public Speaking | Advanced | 0 events | 6 events needed |
+
+<Warning>
+  Large skill gaps indicate areas where you should seek more events. Use the Discovery page to filter for these specific skills.
+</Warning>
+
+## Event Timeline
+
+Chronological view of all attended events:
+
+### Timeline View
+
+Visual timeline with:
+- **Date markers**: Month/year separators
+- **Event cards**: Compact cards with title, date, category
+- **Impact badges**: Color-coded badges (High/Moderate/Low impact)
+- **Milestones**: Achievements unlocked at specific events
+
+**Example:**
+
+```
+── March 2026 ─────────────
+
+🎯 React Conf 2026
+Mar 15-17 | San Francisco
+Impact: High (95)
+🏆 Unlocked: React Expert
+
+── February 2026 ──────────
+
+💡 AWS Lambda Workshop
+Feb 22 | Virtual
+Impact: Moderate (78)
+
+🤝 Tech Hiring Fair
+Feb 10 | New York
+Impact: High (82)
+🏆 Unlocked: 10 New Connections
+```
+
+### List View
+
+Tabular view with sortable columns:
+
+| Event | Date | Category | Impact | Actions |
+|-------|------|----------|--------|----------|
+| React Conf 2026 | Mar 15 | Conference | 95 | View |
+| AWS Lambda Workshop | Feb 22 | Workshop | 78 | View |
+| Tech Hiring Fair | Feb 10 | Career Fair | 82 | View |
+
+<Tip>
+  Use the timeline to reflect on your career journey and identify patterns in your event attendance.
+</Tip>
+
+## Mobile Dashboard Experience
+
+### Optimized Cards
+
+On mobile, dashboard cards are:
+- **Single column**: No side-by-side grids
+- **Collapsible**: Tap to expand detailed sections
+- **Touch-friendly**: Large tap targets for buttons and links
+- **Swipeable**: Swipe between tabs within cards
+
+### Pull-to-Refresh
+
+Pull down on the dashboard to refresh all data:
+- Updated event counts
+- Refreshed goal progress
+- Latest achievements
+
+### Bottom Navigation
+
+Quick access to:
+- Dashboard (current)
+- Discover
+- Calendar
+- Profile
+
+## Dashboard Customization
+
+### Widget Reordering (Coming Soon)
+
+Drag and drop cards to reorder dashboard sections based on your priorities.
+
+### Focus Mode
+
+Toggle to hide completed goals and show only active progress:
+
+1. Click **Focus Mode** toggle in header
+2. Completed goals fade out
+3. Active goals and upcoming events are highlighted
+
+### Export Dashboard Data
+
+Download your dashboard data as:
+- **PDF Report**: Visual summary for resumes or portfolios
+- **CSV Export**: Raw data for personal analysis
+- **JSON**: Developer-friendly format for integrations
+
+Go to **Settings** → **Dashboard** → **Export Data**.
+
+## Tips & Best Practices
+
+<AccordionGroup>
+  <Accordion title="Mark Attendance Promptly">
+    After attending an event, mark it as "Attended" within 24 hours. This keeps your dashboard accurate and helps TechCal improve recommendations.
+  </Accordion>
+
+  <Accordion title="Review Weekly">
+    Set a reminder to check your dashboard every Monday. Review upcoming events, goal progress, and adjust your event tracking accordingly.
+  </Accordion>
+
+  <Accordion title="Set Realistic Goals">
+    Aim for 1-2 events per week if you're employed full-time. Overcommitting leads to burnout and missed events.
+  </Accordion>
+
+  <Accordion title="Track Skills Learned">
+    After each event, note which skills you practiced or learned. This data powers your Learning Progress card.
+  </Accordion>
+
+  <Accordion title="Use Pipeline to Stay Organized">
+    Move events through pipeline stages as your plans solidify. This prevents last-minute scrambles for registration.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Goal progress not updating">
+    **Cause**: Events aren't marked as attended, or event skills don't match your goal.
+
+    **Solution**:
+    1. Mark past events as "Attended"
+    2. Ensure your profile goals are specific (e.g., "Learn React" not "Learn coding")
+    3. Refresh dashboard data
+  </Accordion>
+
+  <Accordion title="Dashboard is empty">
+    **Cause**: You haven't tracked or attended any events yet.
+
+    **Solution**: Visit the [Discovery page](/features/discovery) and track some events. Your dashboard will populate as you engage with events.
+  </Accordion>
+
+  <Accordion title="Learning Progress shows incorrect skills">
+    **Cause**: Event tags or skills are mismatched with your profile.
+
+    **Solution**: Update your profile skills in **Settings** → **Career Profile**. TechCal will re-calculate skill matches.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Recommendations" icon="sparkles" href="/features/recommendations">
+    Learn how TechCal personalizes event recommendations
+  </Card>
+  <Card title="Community Profiles" icon="user" href="/community/profiles">
+    Share your dashboard achievements on your public profile
+  </Card>
+</CardGroup>

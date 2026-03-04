@@ -1,0 +1,540 @@
+---
+title: "Technology Stack"
+description: "Complete tech stack: frameworks, libraries, tools, and services powering TechCal"
+---
+
+## Tech Stack Overview
+
+TechCal is built on modern, production-ready technologies chosen for developer experience, performance, and scalability.
+
+## Core Framework
+
+### Next.js 15
+
+**Version**: `^16.1.6` (latest stable)
+
+**Key Features Used**:
+
+- **App Router**: File-system based routing with layouts and nested routes
+- **Server Components**: RSC for reduced bundle size and faster initial loads
+- **Server Actions**: Type-safe mutations without API routes
+- **Streaming**: Progressive rendering with Suspense boundaries
+- **Image Optimization**: Automatic WebP/AVIF conversion and lazy loading
+
+```json package.json
+{
+  "scripts": {
+    "dev": "next dev",
+    "dev:turbo": "next dev --turbo",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+<Info>
+  Next.js 15 introduces Turbopack as the default dev server (`--turbo` flag) with 5x faster cold starts.
+</Info>
+
+### React 19
+
+**Version**: `19.2.0`
+
+**Modern Features**:
+
+- Actions and transitions
+- Enhanced Suspense and error boundaries
+- Improved concurrent rendering
+- `use` hook for async data fetching
+
+```typescript
+// React 19 concurrent features
+import { use, Suspense } from 'react';
+
+export default function EventDetail({ eventPromise }) {
+  const event = use(eventPromise);
+  return <div>{event.title}</div>;
+}
+```
+
+## UI & Styling
+
+### Tailwind CSS
+
+**Version**: `^3.4.17`
+
+**Configuration**:
+
+```typescript tailwind.config.ts
+{
+  content: ['./src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        // Custom brand colors
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+      },
+    },
+  },
+  plugins: [
+    require('tailwindcss-animate'),
+    require('@tailwindcss/typography'),
+  ],
+}
+```
+
+**Utilities**:
+
+- `tailwind-merge`: Intelligent class merging
+- `class-variance-authority`: Type-safe component variants
+- `tailwindcss-animate`: Pre-built animations
+
+### Radix UI
+
+**Primitives Used**:
+
+```json package.json
+{
+  "@radix-ui/react-avatar": "^1.1.11",
+  "@radix-ui/react-checkbox": "^1.3.3",
+  "@radix-ui/react-dialog": "^1.1.15",
+  "@radix-ui/react-dropdown-menu": "^2.1.16",
+  "@radix-ui/react-popover": "^1.1.15",
+  "@radix-ui/react-select": "^2.2.5",
+  "@radix-ui/react-switch": "^1.2.6",
+  "@radix-ui/react-tooltip": "^1.2.8"
+}
+```
+
+**Why Radix UI**:
+
+- Unstyled, accessible components
+- WAI-ARIA compliant
+- Keyboard navigation built-in
+- Composable and flexible
+
+### Material-UI (MUI)
+
+**Version**: `^7.3.2`
+
+**Usage**: Lazy-loaded for specific components (DatePicker, complex forms)
+
+```typescript
+// Lazy load MUI to avoid bundle bloat
+const DatePicker = dynamic(() => import('@mui/lab/DatePicker'), {
+  ssr: false,
+});
+```
+
+### Animation Libraries
+
+<CardGroup cols={2}>
+  <Card title="Framer Motion" icon="wind">
+    **Version**: `^12.23.26`
+    
+    Declarative animations for React components:
+    ```tsx
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      Content
+    </motion.div>
+    ```
+  </Card>
+  
+  <Card title="GSAP" icon="bolt">
+    **Version**: `^3.13.0`
+    
+    High-performance scroll animations and timelines.
+  </Card>
+</CardGroup>
+
+### Icons
+
+- **Phosphor Icons**: `@phosphor-icons/react@^2.1.10` - 6,000+ icons
+- **Lucide React**: `lucide-react@^0.563.0` - Open-source icon library
+
+## Backend & Database
+
+### Supabase
+
+**Client Version**: `@supabase/supabase-js@^2.50.2`
+
+**Features Used**:
+
+- **PostgreSQL**: Relational database with full SQL support
+- **Authentication**: JWT-based auth with multiple providers
+- **Row Level Security**: Postgres policies for data access control
+- **Storage**: File uploads with CDN delivery
+- **Real-time**: WebSocket subscriptions to table changes
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
+
+const supabase = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+```
+
+<Accordion title="Type Generation">
+  Supabase types are auto-generated from the database schema:
+  
+  ```bash
+  supabase gen types typescript --project-id [PROJECT_ID] > src/types/supabase.ts
+  ```
+  
+  This ensures compile-time type safety for all database operations.
+</Accordion>
+
+### Caching & Performance
+
+**Vercel KV** (`@vercel/kv@^3.0.0`):
+
+- Redis-compatible key-value store
+- Career impact score caching (1 hour TTL)
+- Session storage
+
+```typescript src/services/careerImpactEnrichmentService.ts:91-93
+const CACHE_TTL_SECONDS = 3600; // 1 hour
+const CACHE_PREFIX = 'career-impact:v2';
+```
+
+**Upstash Rate Limiting** (`@upstash/ratelimit@^2.0.6`):
+
+- Sliding window rate limiting
+- Protects API routes from abuse
+- Graceful fallbacks
+
+```typescript
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, '10 s'),
+});
+```
+
+## State Management
+
+### TanStack Query
+
+**Version**: `@tanstack/react-query@^5.83.0`
+
+**Usage Pattern**:
+
+```typescript
+import { useQuery } from '@tanstack/react-query';
+
+export function useEvents(filters: EventFilters) {
+  return useQuery({
+    queryKey: ['events', filters],
+    queryFn: () => fetchEvents(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+```
+
+**Features**:
+
+- Automatic background refetching
+- Optimistic updates
+- Request deduplication
+- Infinite scroll support
+- SSR hydration
+
+**DevTools**: `@tanstack/react-query-devtools@^5.83.0` (dev only)
+
+### React Context
+
+Used for cross-cutting concerns:
+
+- `AuthContext`: User session and profile
+- `CalendarContext`: Calendar view state and date navigation
+- `SnackbarContext`: Toast notifications
+
+## Form Handling
+
+**React Hook Form** (`react-hook-form@^7.62.0`):
+
+- Uncontrolled forms for performance
+- Built-in validation
+- TypeScript integration
+
+**Zod** (`zod@^3.25.76`):
+
+- Runtime type validation
+- Schema validation for forms and API responses
+
+```typescript
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
+const { register, handleSubmit } = useForm({
+  resolver: zodResolver(schema),
+});
+```
+
+## Calendar & Date Management
+
+### FullCalendar
+
+**Core**: `@fullcalendar/core@^6.1.19`
+
+**Plugins**:
+
+- `@fullcalendar/daygrid`: Month and week views
+- `@fullcalendar/timegrid`: Time-based views
+- `@fullcalendar/list`: List view
+- `@fullcalendar/interaction`: Drag and drop
+
+```typescript src/app/calendar/CalendarClientView.tsx
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import listPlugin from '@fullcalendar/list';
+
+<FullCalendar
+  plugins={[dayGridPlugin, timeGridPlugin, listPlugin]}
+  initialView="dayGridMonth"
+  events={events}
+/>
+```
+
+### Date-fns
+
+**Version**: `^4.1.0` + `date-fns-tz@^3.2.0`
+
+```typescript
+import { format, addDays, isBefore } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
+
+const formatted = formatInTimeZone(
+  eventDate,
+  'America/New_York',
+  'PPpp'
+);
+```
+
+## Rich Text Editing
+
+### Tiptap
+
+**Core**: `@tiptap/react@^3.19.0` + `@tiptap/starter-kit@^3.19.0`
+
+**Extensions**:
+
+- Code blocks with syntax highlighting (`@tiptap/extension-code-block-lowlight`)
+- Tables (`@tiptap/extension-table`)
+- Images (`@tiptap/extension-image`)
+- Links (`@tiptap/extension-link`)
+- YouTube embeds (`@tiptap/extension-youtube`)
+
+```typescript
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+
+const editor = useEditor({
+  extensions: [StarterKit],
+  content: initialContent,
+});
+
+return <EditorContent editor={editor} />;
+```
+
+## Data Fetching & APIs
+
+**RSS Parser** (`rss-parser@^3.13.0`):
+
+```typescript
+import Parser from 'rss-parser';
+
+const parser = new Parser();
+const feed = await parser.parseURL('https://example.com/rss');
+```
+
+**ICS Parser** (`node-ical@^0.22.1`):
+
+```typescript
+import ical from 'node-ical';
+
+const events = await ical.async.fromURL(icsUrl);
+```
+
+**Google APIs** (`googleapis@^164.1.0`):
+
+- Calendar integration
+- OAuth flows
+
+## Monitoring & Analytics
+
+### Sentry
+
+**Version**: `@sentry/nextjs@^10.0.0`
+
+**Configuration**:
+
+```typescript sentry.client.config.ts
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: 0.1,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+});
+```
+
+### PostHog
+
+**Version**: `posthog-js@^1.335.2` + `posthog-node@^5.24.2`
+
+- Product analytics
+- Feature flags
+- Session recording
+- A/B testing
+
+## Testing & Quality
+
+### Vitest
+
+**Version**: `^3.2.4`
+
+```json package.json
+{
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  }
+}
+```
+
+**Plugins**:
+
+- `@vitejs/plugin-react`: React support
+- `@vitest/coverage-v8`: Coverage reporting
+
+### Playwright
+
+**Version**: `^1.54.2`
+
+```typescript playwright.config.ts
+export default defineConfig({
+  testDir: './tests',
+  use: {
+    baseURL: 'http://localhost:3000',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
+});
+```
+
+### ESLint
+
+**Version**: `^9` (latest)
+
+```json package.json
+{
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix"
+  }
+}
+```
+
+## Build & Deployment
+
+**TypeScript**: `^5` (strict mode enabled)
+
+**Bundle Analysis**: `@next/bundle-analyzer@^16.1.1`
+
+```bash
+ANALYZE=true npm run build
+```
+
+**TSX Scripts**: `tsx@^4.20.6` for running TypeScript scripts directly
+
+```json package.json
+{
+  "scripts": {
+    "ingest": "tsx scripts/run-ingestion.ts",
+    "verify:production": "tsx scripts/verify-production.ts"
+  }
+}
+```
+
+## Utilities
+
+<CardGroup cols={2}>
+  <Card title="UUID" icon="fingerprint">
+    `uuid@^13.0.0` - RFC4122 UUID generation
+  </Card>
+  
+  <Card title="Sanitize HTML" icon="shield">
+    `sanitize-html@^2.17.1` - XSS protection for user content
+  </Card>
+  
+  <Card title="P-Limit" icon="gauge">
+    `p-limit@^7.2.0` - Concurrency control for async operations
+  </Card>
+  
+  <Card title="Color Utilities" icon="palette">
+    `color2k@^2.0.3` - Color manipulation and conversion
+  </Card>
+</CardGroup>
+
+## Environment Requirements
+
+<Note>
+  **Node.js**: `>=20.9.0` (LTS)
+  
+  Enforced in `package.json`:
+  ```json
+  {
+    "engines": {
+      "node": ">=20.9.0"
+    }
+  }
+  ```
+</Note>
+
+## Production Dependencies Size
+
+Optimized bundle size through:
+
+- Tree-shaking with ES modules
+- Dynamic imports for heavy libraries
+- Code splitting by route
+- Lazy-loading of non-critical components
+
+**Target Metrics**:
+
+- First Load JS: < 100 KB
+- Total Bundle Size: < 500 KB (gzipped)
+- Lighthouse Score: > 90
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="System Overview" icon="diagram-project" href="/architecture/overview">
+    Understand how all the pieces fit together
+  </Card>
+  <Card title="Data Model" icon="database" href="/architecture/data-model">
+    Explore database schema and relationships
+  </Card>
+</CardGroup>

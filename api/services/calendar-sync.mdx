@@ -1,0 +1,439 @@
+---
+title: "Calendar Sync Service"
+description: "Google Calendar integration for automatic event synchronization"
+---
+
+## Overview
+
+TechCal's calendar sync service automatically syncs bookmarked events to your Google Calendar. It handles OAuth token management, event creation/updates/deletion, and graceful error recovery.
+
+<Note>
+Calendar sync is triggered automatically when you bookmark an event or mark attendance. No manual API calls needed.
+</Note>
+
+## Architecture
+
+### Service Components
+
+| Service | Purpose | Location |
+|---------|---------|----------|
+| **GoogleCalendarService** | Google Calendar API wrapper | `src/services/googleCalendarService.ts` |
+| **CalendarSyncService** | Orchestrates sync operations | `src/services/calendarSyncService.ts` |
+| **CalendarConnectionService** | Manages OAuth connections | `src/services/calendarConnectionService.ts` |
+
+### Data Flow
+
+1. User bookmarks event → API route called
+2. CalendarSyncService checks connection status
+3. Token refresh if needed (GoogleCalendarService)
+4. Create/update calendar event (GoogleCalendarService)
+5. Update sync status in database
+6. Return success/error to user
+
+## Google Calendar API
+
+### Authentication
+
+Uses custom OAuth credentials (not Supabase-managed):
+
+```bash
+GOOGLE_OAUTH_CLIENT_ID=your_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=your_client_secret
+```
+
+<Warning>
+**Never expose** `GOOGLE_OAUTH_CLIENT_SECRET` to the client. This service is server-only.
+</Warning>
+
+### OAuth Flow
+
+1. **Initial Authorization:**
+   - User clicks "Connect Calendar" in settings
+   - Redirect to Google OAuth consent screen
+   - Google returns authorization code
+   - Exchange code for access + refresh tokens
+   - Store tokens in `calendar_connections` table
+
+2. **Token Refresh:**
+   - Access tokens expire after 1 hour
+   - Service automatically refreshes using refresh token
+   - New access token stored in database
+   - Sync operation proceeds with fresh token
+
+3. **Re-authentication:**
+   - If refresh fails → Mark connection as "requires reauth"
+   - User sees notification to reconnect
+   - Re-authorization flow clears error state
+
+## Calendar Event Operations
+
+### Create Event
+
+```typescript
+await GoogleCalendarService.createCalendarEvent(
+  accessToken: string,
+  calendarId: string,
+  event: {
+    title: string;
+    description: string;
+    location: string;
+    startTime: string;  // ISO 8601
+    endTime: string;    // ISO 8601
+    sourceUrl?: string;
+  }
+): Promise<string>  // Returns Google Calendar event ID
+```
+
+**Features:**
+- Adds "📅 Added by Kure-Cal" to description
+- Sets event source metadata
+- Handles timezone conversion (all times in UTC)
+- Includes event URL in description
+
+### Update Event
+
+```typescript
+await GoogleCalendarService.updateCalendarEvent(
+  accessToken: string,
+  calendarId: string,
+  eventId: string,
+  event: CalendarEvent
+): Promise<void>
+```
+
+**Use cases:**
+- Event details changed on TechCal
+- User updated bookmark note
+- Time/location changed
+
+### Delete Event
+
+```typescript
+await GoogleCalendarService.deleteCalendarEvent(
+  accessToken: string,
+  calendarId: string,
+  eventId: string
+): Promise<void>
+```
+
+**Triggers:**
+- User unbookmarks event
+- User cancels attendance
+- Event deleted from TechCal
+
+## Sync Triggers
+
+### Automatic Sync Events
+
+<Tabs>
+  <Tab title="Bookmark Event">
+    **Trigger:** User bookmarks an event
+    
+    **Behavior:**
+    - Create event in Google Calendar
+    - Store `external_calendar_event_id`
+    - Set `calendar_sync_status = 'synced'`
+    - Set `calendar_synced_at` timestamp
+    
+    **Requirements:**
+    - Active Google Calendar connection
+    - Valid access token
+    - Event has valid start/end times
+  </Tab>
+  
+  <Tab title="Mark Attending">
+    **Trigger:** User sets status to "attending" or "attended"
+    
+    **Behavior:**
+    - Create event if not already synced
+    - Update event if already synced
+    - Add attendance status to description
+    
+    **Note:** Works even if event isn't bookmarked
+  </Tab>
+  
+  <Tab title="Unbookmark Event">
+    **Trigger:** User unbookmarks an event
+    
+    **Behavior:**
+    - Delete event from Google Calendar
+    - Clear `external_calendar_event_id`
+    - Set `calendar_sync_status = null`
+    
+    **Recovery:** If deletion fails, event stays on calendar but database updated
+  </Tab>
+  
+  <Tab title="Cancel Attendance">
+    **Trigger:** User sets status to "cancelled"
+    
+    **Behavior:**
+    - Delete event from Google Calendar
+    - Keep bookmark (if bookmarked)
+    - Update sync status
+  </Tab>
+</Tabs>
+
+### Manual Sync Operations
+
+**Bulk Sync (First Connection):**
+
+When user first connects calendar, all bookmarked events are synced:
+
+```typescript
+const result = await CalendarSyncService.bulkSyncExistingEvents(
+  userId: string,
+  supabase: SupabaseClient
+): Promise<{
+  total: number;
+  synced: number;
+  failed: number;
+  errors: string[];
+}>
+```
+
+**Batch Processing:**
+- Syncs in batches of 10 events
+- 2-second delay between batches
+- Respects Google API rate limits
+
+## Error Handling
+
+### Error Types
+
+| Error Code | Meaning | Action |
+|------------|---------|--------|
+| **401** | Token expired | Auto-refresh and retry |
+| **403** | Insufficient permissions | Mark for reauth |
+| **404** | Calendar not found | Mark for reauth |
+| **429** | Rate limit exceeded | Retry with exponential backoff |
+| **500-504** | Google server error | Retry once after 1 second |
+
+### Retry Logic
+
+```typescript
+private static async callWithRetry<T>(
+  fn: () => Promise<T>,
+  operation: string,
+  maxRetries = 1
+): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const errorCode = getErrorCode(error);
+      
+      if (errorCode === 429 && attempt < maxRetries) {
+        // Rate limit: Wait 1-2 seconds
+        await sleep(1000 + Math.random() * 1000);
+        continue;
+      }
+      
+      if (errorCode >= 500 && attempt < maxRetries) {
+        // Server error: Wait 1 second
+        await sleep(1000);
+        continue;
+      }
+      
+      // Don't retry auth errors
+      throw error;
+    }
+  }
+}
+```
+
+### User-Facing Errors
+
+Friendly error messages:
+
+```typescript
+static getFriendlyError(error: unknown): string {
+  const code = getErrorCode(error);
+  
+  switch (code) {
+    case 401:
+    case 403:
+      return 'Please reconnect your calendar in settings';
+    case 429:
+      return 'Too many requests. Please try again in a moment.';
+    case 404:
+      return 'Calendar not found. Please reconnect your calendar.';
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return 'Google Calendar is temporarily unavailable. Please try again later.';
+    default:
+      return 'Calendar sync failed. Please try again.';
+  }
+}
+```
+
+## Database Schema
+
+### calendar_connections
+
+```sql
+CREATE TABLE calendar_connections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  provider TEXT NOT NULL DEFAULT 'google',
+  calendar_id TEXT NOT NULL,
+  access_token TEXT,           -- Encrypted
+  refresh_token TEXT,          -- Encrypted
+  token_expiry TIMESTAMPTZ,
+  is_active BOOLEAN DEFAULT true,
+  last_sync_at TIMESTAMPTZ,
+  last_sync_status TEXT,       -- 'success' | 'failed'
+  last_sync_error TEXT,
+  requires_reauth BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### user_events (sync fields)
+
+```sql
+ALTER TABLE user_events ADD COLUMN
+  external_calendar_event_id TEXT,
+  external_provider TEXT,
+  calendar_sync_status TEXT,   -- 'synced' | 'failed' | 'pending'
+  calendar_synced_at TIMESTAMPTZ;
+```
+
+## Security Considerations
+
+### Token Storage
+
+<Warning>
+**Best Practice:** Store tokens encrypted at rest in database. Consider using Supabase Vault for additional security.
+</Warning>
+
+### Scope Minimization
+
+Only request necessary Google Calendar scopes:
+
+```typescript
+const REQUIRED_SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events'
+];
+```
+
+**Why this scope:**
+- Create/update/delete events ✅
+- Read calendar metadata ✅
+- Cannot read other users' calendars ❌
+- Cannot modify calendar settings ❌
+
+### Rate Limiting
+
+Google Calendar API limits:
+- **Per user:** 1,000,000 queries per day
+- **Burst limit:** 10 queries per second
+
+Our implementation:
+- Batch processing with delays
+- Exponential backoff on rate limit errors
+- Bulk sync throttling (10 events per batch, 2s delay)
+
+## Monitoring
+
+### Success Metrics
+
+Track in `calendar_connections` table:
+
+```sql
+SELECT 
+  COUNT(*) as total_connections,
+  COUNT(*) FILTER (WHERE is_active = true) as active,
+  COUNT(*) FILTER (WHERE requires_reauth = true) as needs_reauth,
+  COUNT(*) FILTER (WHERE last_sync_status = 'failed') as failed
+FROM calendar_connections;
+```
+
+### Sentry Tracking
+
+Key breadcrumbs:
+- `calendar_sync.initiated` - Sync started
+- `calendar_sync.completed` - Sync succeeded
+- `calendar_sync.token_refreshed` - Token refreshed
+- `calendar_sync.failed` - Sync failed with error
+
+### Error Logs
+
+```typescript
+Sentry.captureException(error, {
+  tags: {
+    service: 'calendar_sync',
+    operation: 'sync_tracked_event',
+    error_code: getErrorCode(error)
+  },
+  extra: {
+    userId,
+    eventId,
+    calendarProvider: 'google'
+  }
+});
+```
+
+## Testing
+
+### Manual Testing
+
+1. **Connect Calendar:**
+   - Go to `/dashboard/settings`
+   - Click "Connect Google Calendar"
+   - Authorize app
+   - Verify connection shown as active
+
+2. **Sync Event:**
+   - Bookmark any event
+   - Check Google Calendar for new event
+   - Verify event details match
+
+3. **Unsync Event:**
+   - Unbookmark event
+   - Verify event removed from Google Calendar
+
+4. **Token Expiry:**
+   - Manually set `token_expiry` to past date
+   - Bookmark event
+   - Verify automatic token refresh
+
+### Integration Tests
+
+Test sync scenarios:
+
+```typescript
+describe('CalendarSyncService', () => {
+  it('syncs bookmarked event to Google Calendar', async () => {
+    const result = await CalendarSyncService.syncTrackedEvent(
+      userId,
+      eventId,
+      supabase
+    );
+    
+    expect(result.success).toBe(true);
+    expect(result.calendarSynced).toBe(true);
+  });
+  
+  it('handles token expiry gracefully', async () => {
+    // Set expired token
+    await setExpiredToken(userId);
+    
+    const result = await CalendarSyncService.syncTrackedEvent(
+      userId,
+      eventId,
+      supabase
+    );
+    
+    expect(result.success).toBe(true);
+  });
+});
+```
+
+## Related Documentation
+
+- [POST /api/events/tracked](/api/events/tracked) - Trigger sync operations
+- [GET /api/profile/preferences](/api/profile/preferences) - Calendar sync settings
+- [Google Calendar API Docs](https://developers.google.com/calendar/api) - Official API reference

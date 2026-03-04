@@ -1,0 +1,367 @@
+---
+title: "Profile Career APIs"
+description: "Retrieve and update user career profiles for personalized event recommendations"
+---
+
+## Overview
+
+The career profile APIs manage user career data including role, skills, goals, and preferences. This data powers TechCal's personalized event scoring and recommendations.
+
+<Note>
+Career profiles are stored in the `career_profiles` table with automatic cache invalidation.
+</Note>
+
+## Authentication
+
+All endpoints require a valid Supabase authentication token.
+
+```bash
+Authorization: Bearer <supabase_access_token>
+```
+
+---
+
+## GET /api/profile/career
+
+Retrieve the authenticated user's career profile.
+
+### Request
+
+```
+GET /api/profile/career
+```
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  `true` if profile found
+</ResponseField>
+
+<ResponseField name="data" type="CareerProfile | null">
+  <Expandable title="CareerProfile schema">
+    <ResponseField name="userId" type="string" required>
+      User UUID
+    </ResponseField>
+    
+    <ResponseField name="currentRole" type="string" required>
+      Job title (e.g., "Software Engineer", "Data Scientist")
+    </ResponseField>
+    
+    <ResponseField name="seniority" type="string" required>
+      Career level
+      
+      Options: `student`, `entry-level`, `junior`, `mid-level`, `senior`, `staff`, `principal`, `lead`, `manager`, `director`, `vp`, `cto`, `founder`
+    </ResponseField>
+    
+    <ResponseField name="industry" type="string" required>
+      Industry focus (e.g., "Technology/Software", "Healthcare/Biotech")
+    </ResponseField>
+    
+    <ResponseField name="companySize" type="string">
+      Company size category
+      
+      Options: `startup`, `small`, `medium`, `large`, `enterprise`, `freelance`
+    </ResponseField>
+    
+    <ResponseField name="primarySkills" type="string[]" required>
+      Current technical skills
+    </ResponseField>
+    
+    <ResponseField name="skillsToLearn" type="string[]">
+      Skills user wants to learn
+    </ResponseField>
+    
+    <ResponseField name="interests" type="string[]">
+      Professional interests and topics
+    </ResponseField>
+    
+    <ResponseField name="skillTags" type="SkillTag[]">
+      Enhanced skills with proficiency levels
+      
+      <Expandable title="SkillTag schema">
+        <ResponseField name="skill" type="string">
+          Skill name
+        </ResponseField>
+        <ResponseField name="proficiency" type="string">
+          Options: `beginner`, `intermediate`, `advanced`, `expert`
+        </ResponseField>
+        <ResponseField name="yearsOfExperience" type="number">
+          Years using this skill
+        </ResponseField>
+        <ResponseField name="lastUsed" type="string">
+          ISO 8601 date
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="careerGoals" type="string[]">
+      Career objectives
+      
+      Options: `skill-development`, `career-advancement`, `role-transition`, `leadership-growth`, `entrepreneurship`, `consulting`, `specialization`, `generalization`, `networking`, `industry-change`, `work-life-balance`, `salary-increase`
+    </ResponseField>
+    
+    <ResponseField name="timeframe" type="string">
+      Goal timeframe
+      
+      Options: `immediate`, `short-term`, `medium-term`, `long-term`
+    </ResponseField>
+    
+    <ResponseField name="learningStyle" type="string[]">
+      Preferred learning methods
+      
+      Options: `hands-on`, `theoretical`, `interactive`, `networking`, `case-studies`, `peer-learning`
+    </ResponseField>
+    
+    <ResponseField name="availableTime" type="string">
+      Time commitment for events
+      
+      Options: `very-limited`, `limited`, `moderate`, `flexible`, `dedicated`
+    </ResponseField>
+    
+    <ResponseField name="budget" type="string">
+      Budget for paid events
+      
+      Options: `free-only`, `low`, `moderate`, `high`, `unlimited`
+    </ResponseField>
+    
+    <ResponseField name="networkingGoals" type="string[]">
+      Networking objectives
+      
+      Options: `find-mentors`, `find-mentees`, `find-peers`, `find-collaborators`, `find-customers`, `find-employers`, `find-employees`, `industry-insights`, `thought-leadership`
+    </ResponseField>
+    
+    <ResponseField name="preferredEventTypes" type="string[]">
+      Preferred event formats
+      
+      Options: `conference`, `workshop`, `meetup`, `webinar`, `hackathon`, `summit`, `bootcamp`, `certification`, `panel`, `keynote`, `networking`, `trade-show`
+    </ResponseField>
+    
+    <ResponseField name="lastUpdated" type="string">
+      ISO 8601 timestamp of last profile update
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X GET https://kurecal.app/api/profile/career \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+const response = await fetch('/api/profile/career', {
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+const { data } = await response.json();
+if (data) {
+  console.log(`Role: ${data.currentRole}`);
+  console.log(`Skills: ${data.primarySkills.join(', ')}`);
+}
+```
+</CodeGroup>
+
+### Error Responses
+
+<CodeGroup>
+```json 401 Unauthorized
+{
+  "success": false,
+  "error": "Authentication required"
+}
+```
+
+```json 404 Not Found
+{
+  "success": true,
+  "data": null
+}
+```
+</CodeGroup>
+
+---
+
+## PUT /api/profile/career
+
+Update the authenticated user's career profile. Creates profile if it doesn't exist (upsert).
+
+<Warning>
+Updating career profile invalidates all career impact score caches. New scores will be calculated on next event fetch.
+</Warning>
+
+### Request
+
+```
+PUT /api/profile/career
+```
+
+### Body Parameters
+
+All fields from the GET response can be updated. Minimum required fields:
+
+<ParamField body="currentRole" type="string" required>
+  Job title
+</ParamField>
+
+<ParamField body="seniority" type="string" required>
+  Career level (see GET response for options)
+</ParamField>
+
+<ParamField body="industry" type="string" required>
+  Industry focus
+</ParamField>
+
+<ParamField body="primarySkills" type="string[]">
+  Current skills (at least one recommended)
+</ParamField>
+
+<ParamField body="careerGoals" type="string[]">
+  Career objectives (at least one recommended)
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  `true` if update succeeded
+</ResponseField>
+
+<ResponseField name="data" type="CareerProfile" required>
+  Updated career profile (same schema as GET response)
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Success message indicating cache invalidation status
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X PUT https://kurecal.app/api/profile/career \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "currentRole": "Senior Software Engineer",
+    "seniority": "senior",
+    "industry": "Technology/Software",
+    "primarySkills": ["Python", "React", "AWS"],
+    "skillsToLearn": ["Kubernetes", "Machine Learning"],
+    "careerGoals": ["skill-development", "leadership-growth"],
+    "timeframe": "short-term",
+    "budget": "moderate"
+  }'
+```
+
+```typescript TypeScript
+const profileUpdate = {
+  currentRole: 'Senior Software Engineer',
+  seniority: 'senior',
+  industry: 'Technology/Software',
+  primarySkills: ['Python', 'React', 'AWS'],
+  skillsToLearn: ['Kubernetes', 'Machine Learning'],
+  careerGoals: ['skill-development', 'leadership-growth'],
+  timeframe: 'short-term',
+  budget: 'moderate'
+};
+
+const response = await fetch('/api/profile/career', {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify(profileUpdate)
+});
+
+const { data } = await response.json();
+console.log('Profile updated:', data);
+```
+</CodeGroup>
+
+### Error Responses
+
+<CodeGroup>
+```json 401 Unauthorized
+{
+  "success": false,
+  "error": "Authentication required"
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "error": "Current role is required"
+}
+```
+
+```json 500 Server Error
+{
+  "success": false,
+  "error": "Failed to save career profile"
+}
+```
+</CodeGroup>
+
+---
+
+## Data Flow
+
+### Profile Creation
+
+1. User completes career onboarding (`/onboarding/career`)
+2. Frontend calls `PUT /api/profile/career` with full profile data
+3. Backend upserts to `career_profiles` table
+4. Career impact cache is invalidated
+5. User redirected to dashboard
+
+### Profile Updates
+
+1. User updates profile in settings (`/dashboard/settings`)
+2. Frontend calls `PUT /api/profile/career` with changed fields
+3. Backend merges changes and saves
+4. All cached career impact scores are invalidated
+5. Next event fetch recalculates scores with new profile
+
+### Cache Invalidation
+
+When career profile is updated, the following caches are cleared:
+- Redis career impact scores (key pattern: `career-impact:v2:*`)
+- User-specific recommendation caches
+- Dashboard analytics cache (for this user)
+
+<Tip>
+Cache invalidation happens automatically - no manual intervention needed.
+</Tip>
+
+## Validation Rules
+
+### Required Fields
+
+- `currentRole` - Must be non-empty string
+- `seniority` - Must be one of the predefined values
+- `industry` - Must be non-empty string
+
+### Recommended Fields
+
+For best recommendation quality, provide:
+- At least 3 `primarySkills`
+- At least 2 `skillsToLearn`
+- At least 2 `careerGoals`
+- At least 3 `interests`
+
+### Optional Enhancements
+
+- `skillTags` with proficiency levels improve skill matching precision
+- `networkingGoals` enable better event filtering for networking opportunities
+- `preferredEventTypes` influence event format recommendations
+
+## Related Endpoints
+
+- [GET /api/events/recommendations](/api/events/recommendations) - Uses career profile for personalized recs
+- [POST /api/events/filtered](/api/events/filtered) - Uses career profile for scoring
+- [GET /api/dashboard/analytics](/api/dashboard/analytics) - Shows career goal progress

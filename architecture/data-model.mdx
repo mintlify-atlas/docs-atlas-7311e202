@@ -1,0 +1,623 @@
+---
+title: "Data Model"
+description: "Database schema, key tables, relationships, and data access patterns in TechCal"
+---
+
+## Database Overview
+
+TechCal uses **Supabase PostgreSQL** as its primary database, with auto-generated TypeScript types for compile-time safety.
+
+```typescript src/types/database.ts
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from './supabase';
+
+export type SupabaseClientType = SupabaseClient<Database>;
+```
+
+## Core Tables
+
+### Events
+
+**Primary table for all event data**
+
+```typescript src/types/events.ts:73-131
+interface Event {
+  // Core identifiers
+  id: string;
+  createdAt: string;
+  updatedAt?: string | null;
+
+  // Event information
+  title: string;
+  description: string;
+  organizer: string;
+  location: string;
+  status: string;
+
+  // Timing
+  startTime: string;
+  endTime: string | null;
+  timezone?: string | null;
+
+  // URLs
+  sourceUrl: string;
+  livestreamUrl: string | null;
+  registrationUrl?: string | null;
+
+  // Categorization
+  eventTypeId: string;
+  category?: EventType;
+  tags?: EventTag[];
+
+  // Organization
+  organization?: {
+    id: string;
+    name: string;
+    logo?: string;
+  };
+
+  // Additional metadata
+  priceRange?: string | null;
+  priceMin?: number | null;
+  capacity?: number | null;
+  attendeeCount?: number | null;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced' | null;
+  eventFormat?: 'Online' | 'In-person' | 'Hybrid' | null;
+  targetAudience?: string | null;
+  prerequisites?: string | null;
+
+  // Rich content
+  agendaUrl?: string | null;
+  speakerLineup?: Speaker[] | null;
+  agenda?: AgendaItem[];
+}
+```
+
+**Key Relationships**:
+
+- `event_types` - Event categorization (conference, workshop, meetup, etc.)
+- `event_tags` - Many-to-many tagging for filtering
+- `speakers` - Via `event_speakers` join table
+- `event_agenda` - Structured agenda items for multi-day events
+- `organizations` - Event organizer entities
+
+<Accordion title="Event Enhancements">
+  Events can be enriched with additional metadata:
+  
+  ```typescript src/types/events.ts:144-179
+  // Event with tracking status
+  type EventWithTracking = Event & {
+    isTracked: boolean;
+    trackingStatus?: EventStatus;
+    trackingNotes?: string | null;
+  };
+
+  // Event with career impact scoring
+  type EventWithCareerImpact = Event & {
+    careerImpact?: CareerImpactScore;
+    isCareerScored: boolean;
+    scoringError?: string;
+  };
+
+  // Event with multi-day support
+  type EventWithMultiDay = Event & {
+    isMultiDay: boolean;
+    dailySchedule?: DailySchedule;
+    eventPattern: 'single' | 'multi_day' | 'all_day' | 'recurring';
+  };
+  ```
+</Accordion>
+
+### Profiles
+
+**User profiles with career data**
+
+```typescript src/types/career.ts:429-459
+interface CareerProfile {
+  // User context
+  userId: string;
+  profileId: string;
+  lastUpdated: string;
+  
+  // Current Role
+  currentRole: string;
+  seniority: SeniorityLevel; // 'entry-level' | 'junior' | 'mid-level' | 'senior' | ...
+  industry: string;
+  companySize: CompanySize; // 'startup' | 'small' | 'medium' | 'large' | ...
+  
+  // Skills and Interests
+  primarySkills: string[];
+  skillsToLearn: string[];
+  interests: string[];
+  skillTags?: SkillTag[]; // Enhanced with proficiency levels
+  
+  // Career Goals
+  careerGoals: CareerGoal[]; // 'skill-development' | 'career-advancement' | ...
+  timeframe: CareerTimeframe; // 'immediate' | 'short-term' | 'medium-term' | 'long-term'
+  
+  // Learning Preferences
+  learningStyle: LearningStyle[]; // 'hands-on' | 'theoretical' | 'interactive' | ...
+  availableTime: AvailableTime; // 'very-limited' | 'limited' | 'moderate' | ...
+  budget: BudgetRange; // 'free-only' | 'low' | 'moderate' | 'high' | ...
+  
+  // Networking
+  networkingGoals: NetworkingGoal[];
+  preferredEventTypes: CareerEventType[];
+}
+```
+
+**Storage**:
+
+- Core fields in `profiles` table
+- Career data in JSONB `preferences` column
+- `onboarding_completed` flag for access control
+
+**Key Indexes**:
+
+```sql
+CREATE INDEX idx_profiles_user_id ON profiles(id);
+CREATE INDEX idx_profiles_username ON profiles(username) WHERE username IS NOT NULL;
+CREATE INDEX idx_profiles_onboarding ON profiles(onboarding_completed);
+```
+
+### Tracked Events
+
+**User interactions with events**
+
+```typescript src/types/events.ts:304-314
+interface TrackedEventRecord {
+  trackingId: string;
+  userId: string;
+  eventId: string;
+  status: EventStatus | null;  // 'attending' | 'attended' | 'cancelled'
+  notes: string | null;
+  trackedAt: string;
+  isBookmarked: boolean;  // Separate from attendance
+  bookmarkedAt: string | null;
+  event: Event | null;
+}
+```
+
+**Purpose**:
+
+- Track user bookmarks (saved events)
+- Record attendance status
+- Personal notes per event
+- Behavioral data for recommendation scoring
+
+**Queries**:
+
+```typescript
+// Get user's bookmarked events
+const { data } = await supabase
+  .from('tracked_events')
+  .select('*, event:events(*)')
+  .eq('user_id', userId)
+  .eq('is_bookmarked', true)
+  .order('bookmarked_at', { ascending: false });
+```
+
+### Event Speakers
+
+**Speaker information and relationships**
+
+```typescript src/types/events.ts:229-242
+interface Speaker {
+  id: string;
+  name: string;
+  title?: string;
+  company?: string;
+  bio?: string;
+  photoUrl?: string;
+  linkedinUrl?: string;
+  socialLinks?: {
+    twitter?: string;
+    linkedin?: string;
+    website?: string;
+  };
+}
+```
+
+**Join Tables**:
+
+- `event_speakers`: Links events to speakers
+- `agenda_speakers`: Links agenda items to speakers for multi-day events
+
+**Schema** (from `src/types/supabase.ts:17-82`):
+
+```typescript
+agenda_speakers: {
+  Row: {
+    agenda_id: string;
+    created_at: string | null;
+    event_id: string;
+    event_title: string | null;
+    speaker_id: string;
+  }
+  Relationships: [
+    { foreignKeyName: "agenda_speakers_agenda_id_fkey", columns: ["agenda_id"], referencedTable: "event_agenda" },
+    { foreignKeyName: "agenda_speakers_speaker_id_fkey", columns: ["speaker_id"], referencedTable: "speakers" }
+  ]
+}
+```
+
+### Event Agenda
+
+**Structured agenda for multi-day events**
+
+```typescript src/types/events.ts:49-64
+interface AgendaItem {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  type: string; // 'talk' | 'workshop' | 'break' | 'networking'
+  description?: string;
+  location?: string;
+  dayNumber?: number;
+  duration?: number;
+  durationMinutes?: number;
+  track?: string;
+  sortOrder?: number;
+  speaker?: Speaker;
+  speakers?: Speaker[];
+}
+```
+
+**Database Schema** (`src/types/events.ts:248-266`):
+
+```typescript
+interface DatabaseAgendaItem {
+  id: string;
+  event_id: string;
+  day_number: number;
+  start_time: string;
+  end_time: string;
+  title: string;
+  description: string;
+  location: string;
+  agenda_type: string;
+  duration_minutes: number;
+  track: string;
+  difficulty_level: string | null;
+  prerequisites: string | null;
+  capacity: number | null;
+  is_required: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+### Hackathons
+
+**Team-based event coordination**
+
+Key tables:
+
+- `hackathons`: Hackathon metadata (based on event)
+- `hackathon_teams`: Team information
+- `team_members`: User participation in teams
+- `team_invitations`: Pending invites
+
+**Features**:
+
+- Capacity validation (min/max team size)
+- Role assignments within teams
+- Skill requirement matching
+- Invitation workflows
+
+See `src/types/hackathon.ts` and `src/services/hackathonService.ts` for full schema.
+
+## Social & Community Tables
+
+### Follows
+
+**User connection graph**
+
+```typescript
+interface Follow {
+  follower_id: string; // User doing the following
+  following_id: string; // User being followed
+  created_at: string;
+}
+```
+
+**Indexes**:
+
+```sql
+CREATE INDEX idx_follows_follower ON follows(follower_id);
+CREATE INDEX idx_follows_following ON follows(following_id);
+CREATE UNIQUE INDEX idx_follows_unique ON follows(follower_id, following_id);
+```
+
+### Blocks
+
+**User blocking for safety**
+
+```typescript src/types/supabase.ts:123-182
+blocks: {
+  Row: {
+    blocked_id: string;   // User being blocked
+    blocker_id: string;   // User doing the blocking
+    created_at: string;
+  }
+}
+```
+
+**Effect**: Mutual invisibility in community directory, attendee lists, and profiles.
+
+## Ingestion Tables
+
+### Event Sources
+
+**Configuration for event ingestion**
+
+```typescript src/types/ingestion.ts
+interface EventSource {
+  id: string;
+  name: string;
+  url: string;
+  source_type: 'rss' | 'api' | 'ics' | 'html';
+  enabled: boolean;
+  last_ingested_at?: string;
+  ingestion_config: {
+    headers?: Record<string, string>;
+    transform?: string; // Custom transformation logic
+    quality_threshold?: number;
+  };
+}
+```
+
+### Moderation Queue
+
+**Events pending manual review**
+
+Fields:
+
+- `event_id`: Reference to events table
+- `quality_score`: Automated quality assessment (0-100)
+- `deduplication_matches`: Similar events found
+- `flagged_reasons`: Why event needs review
+- `reviewed_at`: Timestamp of manual review
+- `reviewer_id`: Admin who reviewed
+- `decision`: 'approved' | 'rejected' | 'pending'
+
+**Auto-publish Rules**:
+
+- Quality score >= 75% → Auto-publish
+- Quality score < 50% → Moderation queue
+- 50-75% → Configurable threshold
+
+## Analytics Tables
+
+### Telemetry Events
+
+**User interaction tracking**
+
+```typescript src/types/telemetry.ts
+interface TelemetryEvent {
+  id: string;
+  user_id: string | null; // Null for anonymous
+  event_type: string; // 'page_view' | 'event_click' | 'recommendation_shown'
+  event_properties: Record<string, unknown>;
+  session_id: string;
+  timestamp: string;
+  user_agent: string;
+}
+```
+
+**Anonymization**: PII is stripped before storage per `src/utils/supabase/telemetry.ts`.
+
+### Audit Log
+
+**System-level change tracking**
+
+```typescript src/types/supabase.ts:84-122
+audit_log: {
+  Row: {
+    id: string;
+    created_at: string | null;
+    table_name: string;
+    operation: string; // 'INSERT' | 'UPDATE' | 'DELETE'
+    record_id: string | null;
+    old_values: Json | null;
+    new_values: Json | null;
+    user_id: string | null;
+    ip_address: unknown;
+    user_agent: string | null;
+  }
+}
+```
+
+## Row Level Security (RLS)
+
+### Public Access
+
+Tables with public read access:
+
+- `events` (published events only)
+- `event_types`
+- `event_tags`
+- `speakers`
+- `organizations`
+- `profiles` (public fields only when `is_public = true`)
+
+### User-Scoped Access
+
+Tables restricted to authenticated users:
+
+```sql
+-- Tracked events: Users can only see their own
+CREATE POLICY "Users can view own tracked events"
+  ON tracked_events FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Follows: Users can view their follows and followers
+CREATE POLICY "Users can view own follows"
+  ON follows FOR SELECT
+  USING (auth.uid() = follower_id OR auth.uid() = following_id);
+```
+
+### Admin Access
+
+Admin-only tables:
+
+- `audit_log`
+- `moderation_queue`
+- `event_sources`
+
+```sql
+CREATE POLICY "Admin only"
+  ON moderation_queue FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM profiles
+    WHERE id = auth.uid() AND is_admin = TRUE
+  ));
+```
+
+## Data Access Patterns
+
+### Service Layer
+
+All database access goes through services in `src/services/`:
+
+<CodeGroup>
+```typescript Event Service
+// src/services/eventService.ts
+export async function getUpcomingEvents(
+  supabase: SupabaseClientType,
+  filters?: EventFilters
+): Promise<Event[]> {
+  let query = supabase
+    .from('events')
+    .select('*, category:event_types(*), tags:event_tags(*)')
+    .gte('start_time', new Date().toISOString())
+    .order('start_time', { ascending: true });
+
+  if (filters?.eventType) {
+    query = query.eq('event_type_id', filters.eventType);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+```
+
+```typescript Profile Service
+// src/services/profileService.ts
+export async function getCareerProfile(
+  userId: string,
+  supabase: SupabaseClientType
+): Promise<CareerProfile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (error) return null;
+
+  // Parse preferences JSON to CareerProfile
+  return parseCareerProfile(data);
+}
+```
+</CodeGroup>
+
+### Caching Strategy
+
+Multi-tier caching:
+
+1. **React Query** (client-side): 5-10 min stale time
+2. **Vercel KV** (Redis): Career impact scores (1 hour TTL)
+3. **Supabase** (Postgres): Materialized views for analytics
+
+```typescript src/services/careerImpactEnrichmentService.ts:209-230
+// Try cache first
+const cacheKeys = events.map(e => getCacheKey(userId, e.id, cacheScope));
+const cachedScores = await kv.mget<CareerImpactScore[]>(...cacheKeys);
+
+events.forEach((event, index) => {
+  const cachedScore = cachedScores[index];
+  if (cachedScore) {
+    enrichedEventsMap.set(event.id, {
+      ...event,
+      careerImpact: cachedScore,
+      isCareerScored: true
+    });
+    cacheHitCount++;
+  } else {
+    eventsToCalculate.push(event);
+    cacheMissCount++;
+  }
+});
+```
+
+## Data Migration
+
+Migrations stored in `supabase/migrations/`:
+
+```bash
+supabase migration new create_table_name
+supabase migration up
+```
+
+<Warning>
+  Always test migrations in staging before production. Use transactions for multi-step migrations.
+</Warning>
+
+## Performance Optimization
+
+### Indexes
+
+Critical indexes for query performance:
+
+```sql
+-- Event queries
+CREATE INDEX idx_events_start_time ON events(start_time);
+CREATE INDEX idx_events_type ON events(event_type_id);
+CREATE INDEX idx_events_location ON events(location) WHERE location IS NOT NULL;
+
+-- User queries
+CREATE INDEX idx_tracked_events_user ON tracked_events(user_id, bookmarked_at DESC);
+CREATE INDEX idx_follows_composite ON follows(follower_id, created_at DESC);
+
+-- Full-text search
+CREATE INDEX idx_events_fts ON events USING gin(to_tsvector('english', title || ' ' || description));
+```
+
+### Materialized Views
+
+Pre-computed aggregations:
+
+```sql
+-- User engagement summary
+CREATE MATERIALIZED VIEW user_engagement_summary AS
+SELECT
+  user_id,
+  COUNT(*) FILTER (WHERE is_bookmarked) AS bookmarked_count,
+  COUNT(*) FILTER (WHERE status = 'attended') AS attended_count,
+  COUNT(DISTINCT event_type_id) AS diverse_types_count
+FROM tracked_events
+GROUP BY user_id;
+
+CREATE INDEX idx_engagement_user ON user_engagement_summary(user_id);
+```
+
+Refreshed via cron:
+
+```sql
+REFRESH MATERIALIZED VIEW CONCURRENTLY user_engagement_summary;
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Scoring Engine" icon="calculator" href="/architecture/scoring-engine">
+    See how career data is used for intelligent recommendations
+  </Card>
+  <Card title="Recommendation System" icon="sparkles" href="/architecture/recommendation-system">
+    Learn about advanced scoring and behavioral reranking
+  </Card>
+</CardGroup>

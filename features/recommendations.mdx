@@ -1,0 +1,507 @@
+---
+title: "How Recommendations Work"
+description: "Understanding TechCal's personalized event scoring system—career alignment, behavioral signals, and diversity algorithms"
+---
+
+## Overview
+
+TechCal doesn't just list events—it **scores every event** based on YOUR unique career profile. This means you see the most relevant opportunities first, saving hours of manual filtering.
+
+Every event gets a **Career Impact Score (0-100)** that answers: *"How much will this event help MY career goals?"*
+
+## How Career Impact Scores Work
+
+### The Scoring System
+
+Each event is evaluated across **5 components**, then combined into an overall score:
+
+<CardGroup cols={3}>
+  <Card title="Skill Relevance" icon="code">
+    0-100 score based on:
+    - Match with your current skills
+    - Overlap with skills you want to learn
+    - Skill proficiency gaps
+  </Card>
+  <Card title="Career Stage Match" icon="stairs">
+    0-100 score based on:
+    - Event difficulty vs. your seniority
+    - Appropriate content level
+    - Role alignment
+  </Card>
+  <Card title="Networking Value" icon="users">
+    0-100 score based on:
+    - Attendee profiles (if available)
+    - Hiring managers present
+    - Peer networking opportunities
+  </Card>
+  <Card title="Industry Relevance" icon="building">
+    0-100 score based on:
+    - Target industry match
+    - Company types represented
+    - Domain expertise
+  </Card>
+  <Card title="Timing Bonus" icon="clock">
+    0-10 bonus for:
+    - Urgency (event soon)
+    - Registration deadline approaching
+  </Card>
+</CardGroup>
+
+### Overall Score Calculation
+
+The final Career Impact Score is a weighted average:
+
+```
+Overall Score = (
+  Skill Relevance × 40% +
+  Career Stage Match × 25% +
+  Networking Value × 20% +
+  Industry Relevance × 15%
+) + Timing Bonus
+```
+
+<Note>
+  Weights are calibrated based on user feedback and attendance patterns. Skill relevance has the highest weight because it's the strongest predictor of event value.
+</Note>
+
+## Skill Relevance Scoring
+
+### How It Works
+
+TechCal compares event skills (from titles, descriptions, and tags) with your profile:
+
+<Steps>
+  <Step title="Extract Event Skills">
+    TechCal identifies technologies, frameworks, and topics mentioned in:
+    - Event title
+    - Description
+    - Speaker bios
+    - Agenda items
+    - Tags
+
+    **Example**: "React Advanced Patterns Workshop" extracts: React, JavaScript, Frontend, Web Development
+  </Step>
+
+  <Step title="Match Against Your Profile">
+    Each extracted skill is compared to:
+    - **Primary Skills**: Things you already know
+    - **Skills to Learn**: Things you want to learn
+
+    **Match types**:
+    - **Exact match**: React ↔ React (100% match)
+    - **Related match**: React ↔ Frontend Development (70% match)
+    - **No match**: React ↔ Data Science (0% match)
+  </Step>
+
+  <Step title="Calculate Skill Score">
+    Formula:
+    ```
+    Skill Score = (
+      (Primary Skills Matches × 0.4) +
+      (Learning Skills Matches × 0.6)
+    ) / Total Event Skills
+    ```
+
+    **Why learning skills are weighted higher**: Events that teach you NEW skills are more valuable than reinforcing existing ones.
+  </Step>
+</Steps>
+
+### Examples
+
+<Tabs>
+  <Tab title="Perfect Match (95+)">
+    **Your Profile**:
+    - Primary Skills: Python, Django
+    - Skills to Learn: FastAPI, Microservices
+
+    **Event**: "FastAPI Microservices Workshop"
+
+    **Match**:
+    - ✅ FastAPI (Learning) - 100% match
+    - ✅ Microservices (Learning) - 100% match
+    - ✅ Python (Primary) - 100% match
+
+    **Skill Score**: 98
+  </Tab>
+
+  <Tab title="Good Match (70-85)">
+    **Your Profile**:
+    - Primary Skills: React, JavaScript
+    - Skills to Learn: TypeScript, Testing
+
+    **Event**: "React Testing Best Practices"
+
+    **Match**:
+    - ✅ React (Primary) - 100% match
+    - ✅ Testing (Learning) - 100% match
+    - ❌ TypeScript - Not mentioned
+
+    **Skill Score**: 78
+  </Tab>
+
+  <Tab title="Weak Match (30-50)">
+    **Your Profile**:
+    - Primary Skills: Backend, Node.js
+    - Skills to Learn: GraphQL, PostgreSQL
+
+    **Event**: "iOS App Development Bootcamp"
+
+    **Match**:
+    - ❌ iOS - Not in profile
+    - ❌ Swift - Not in profile
+    - ❌ Mobile - Not in profile
+
+    **Skill Score**: 15
+  </Tab>
+</Tabs>
+
+<Tip>
+  To improve skill matching, add at least **5-8 skills** to both "Primary Skills" and "Skills to Learn" in your profile.
+</Tip>
+
+## Career Stage Matching
+
+### Difficulty Levels
+
+Events are tagged with difficulty:
+
+- **Beginner**: Intro workshops, 101 sessions, bootcamps
+- **Intermediate**: Standard professional content, assumes base knowledge
+- **Advanced**: Expert talks, deep technical dives, architecture discussions
+
+### Seniority Mapping
+
+Your profile seniority maps to appropriate difficulty:
+
+| Your Seniority | Best Match | Acceptable | Poor Match |
+|----------------|------------|------------|-----------|
+| **Junior** | Beginner, Intermediate | Advanced (stretch) | None |
+| **Mid-level** | Intermediate | Beginner, Advanced | None |
+| **Senior** | Advanced, Intermediate | Beginner (mentoring) | None |
+| **Lead/Principal** | Advanced | Intermediate | Beginner |
+
+### Scoring Formula
+
+```
+if difficulty == best_match:
+  stage_score = 100
+elif difficulty == acceptable:
+  stage_score = 70
+else:
+  stage_score = 30
+```
+
+<Warning>
+  Attending events below your level can still be valuable for mentoring or networking, but TechCal scores them lower because they're less challenging.
+</Warning>
+
+## Networking Value Scoring
+
+### Factors Considered
+
+<AccordionGroup>
+  <Accordion title="Event Size">
+    - **Large (500+ attendees)**: High networking potential, but harder to make deep connections (score: 60-70)
+    - **Medium (50-500 attendees)**: Balanced networking (score: 80-90)
+    - **Small (&lt;50 attendees)**: Intimate, easier to connect (score: 85-95)
+  </Accordion>
+
+  <Accordion title="Event Format">
+    - **In-person**: Best for networking (score: 100)
+    - **Hybrid**: Good, with virtual options (score: 75)
+    - **Virtual**: Limited but still valuable (score: 50)
+  </Accordion>
+
+  <Accordion title="Dedicated Networking Sessions">
+    Events with explicit networking time:
+    - Networking mixers: +20 points
+    - Q&A sessions: +10 points
+    - Workshops with group work: +15 points
+  </Accordion>
+
+  <Accordion title="Hiring Opportunities">
+    Events flagged as hiring-focused:
+    - Career fairs: +30 points
+    - Sponsor booths (recruiting): +15 points
+  </Accordion>
+
+  <Accordion title="Your Network Attending">
+    If people you follow are attending:
+    - 1-2 people: +10 points
+    - 3-5 people: +20 points
+    - 6+ people: +30 points
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  If "Build your network" is one of your career goals, networking value is weighted higher in your overall score.
+</Tip>
+
+## Industry Relevance Scoring
+
+### Industry Matching
+
+Events are tagged with primary industries:
+
+- SaaS
+- FinTech
+- HealthTech
+- E-commerce
+- Gaming
+- Enterprise Software
+- Open Source
+- Education
+- DevTools
+
+Your profile industry (set during onboarding) determines scoring:
+
+- **Exact match**: 100 points (e.g., you work in FinTech, event is FinTech conference)
+- **Adjacent industries**: 70 points (e.g., you work in SaaS, event is Enterprise Software)
+- **General tech**: 50 points (e.g., event is broadly applicable like "JavaScript Conference")
+- **Unrelated**: 20 points (e.g., you work in SaaS, event is Healthcare specific)
+
+<Note>
+  If you haven't set an industry preference, TechCal defaults to "General Tech" and scores all industries at 50 (neutral).
+</Note>
+
+## Behavioral Boost (Advanced)
+
+### What Is Behavioral Boost?
+
+Beyond profile matching, TechCal learns from your **event behavior**:
+
+- Events you track (but don't attend)
+- Events you attend
+- Events you spend time viewing
+- Patterns in your event choices
+
+This data is used to **boost** or **penalize** scores for future recommendations.
+
+<Warning>
+  Behavioral boost is **opt-in** and disabled by default for privacy. Enable it in **Settings** → **Privacy** → **Personalization**.
+</Warning>
+
+### How Behavioral Boost Works
+
+<Steps>
+  <Step title="Track Your Event Interactions">
+    TechCal logs (anonymized):
+    - Events you clicked
+    - Events you tracked
+    - Events you attended
+    - Time spent viewing event details
+  </Step>
+
+  <Step title="Identify Patterns">
+    Machine learning models detect:
+    - **Preferred categories**: "You attend 80% workshops vs. 20% conferences"
+    - **Format preferences**: "You favor virtual over in-person"
+    - **Hidden interests**: "You click on AI events even though it's not in your profile"
+  </Step>
+
+  <Step title="Adjust Scores">
+    For future events:
+    - **+10 to +20 points**: Events similar to ones you attended and rated highly
+    - **-5 to -10 points**: Events similar to ones you tracked but didn't attend
+    - **+5 points**: Categories you engage with frequently
+  </Step>
+</Steps>
+
+### Privacy & Control
+
+- **Behavioral data is private**: Never shared with other users or event organizers
+- **Opt-out anytime**: Disable in settings to revert to profile-only scoring
+- **Data deletion**: Request full deletion via **Settings** → **Privacy** → **Delete Behavioral Data**
+
+<Tip>
+  Behavioral boost is most accurate after you've attended 5-10 events. Early on, profile-based scoring is more reliable.
+</Tip>
+
+## Diversity Algorithm
+
+### Preventing Filter Bubbles
+
+To avoid showing you the SAME types of events repeatedly, TechCal injects **diversity**:
+
+<Steps>
+  <Step title="Score All Events Normally">
+    Every event gets a Career Impact Score as described above.
+  </Step>
+
+  <Step title="Identify Top 100">
+    Select the top 100 events by score.
+  </Step>
+
+  <Step title="Apply Diversity Penalty">
+    For events too similar to ones you recently attended:
+    - Same category + same month: -15 points
+    - Same organizer + same quarter: -10 points
+    - Same skill focus + same month: -5 points
+  </Step>
+
+  <Step title="Re-Rank with Diversity">
+    Re-sort the top 100 after penalties. This ensures variety in your recommendations.
+  </Step>
+</Steps>
+
+**Example:**
+
+You attended 3 React conferences in March. In April, React events get a small penalty, so you'll see more events about other frameworks (Vue, Angular, Svelte) ranked higher—even if React events technically score higher.
+
+<Note>
+  Diversity doesn't REMOVE events—it just re-ranks to surface variety. You can still find React events by filtering or searching.
+</Note>
+
+## Cold Start Problem
+
+### What Happens Without a Profile?
+
+If you skip onboarding or have an incomplete profile, TechCal uses **cold start scoring**:
+
+- **Skill Relevance**: Set to neutral (50)
+- **Career Stage**: Defaults to Intermediate
+- **Networking**: Full score (no profile needed)
+- **Industry**: Neutral (50)
+
+Events are then sorted by **popularity** (most-attended first) instead of career impact.
+
+<Warning>
+  Cold start recommendations are generic. **Complete your profile** to unlock personalized scoring.
+</Warning>
+
+### Improving Recommendations
+
+To get the best recommendations:
+
+<Steps>
+  <Step title="Complete Career Onboarding">
+    Go to **Settings** → **Career Profile** and fill out:
+    - Current role and seniority
+    - 5-8 primary skills
+    - 5-8 skills to learn
+    - Career goals
+    - Industry preference
+  </Step>
+
+  <Step title="Set Budget Preferences">
+    Under **Event Preferences**, select your budget tier. This filters out events you can't afford.
+  </Step>
+
+  <Step title="Attend Events">
+    After attending 3-5 events, TechCal learns your preferences and can apply behavioral boosts.
+  </Step>
+
+  <Step title="Provide Feedback">
+    After attending events, rate them (1-5 stars). This helps refine future recommendations.
+  </Step>
+</Steps>
+
+## Scoring Transparency
+
+### Viewing Score Breakdowns
+
+For any event, click the **Career Impact** tab to see:
+
+- Overall score (0-100)
+- Component scores (Skill, Stage, Networking, Industry)
+- Matched skills with your profile
+- Matched goals
+- Confidence level (high/medium/low)
+
+**Example:**
+
+> **Overall Career Impact: 88** (High)
+>
+> **Breakdown:**
+> - Skill Relevance: 92 (Matches 4 of your learning skills)
+> - Career Stage: 85 (Intermediate - good fit for Mid-level)
+> - Networking Value: 80 (200 attendees, in-person)
+> - Industry Relevance: 90 (FinTech - matches your profile)
+>
+> **Matched Skills:**
+> ✅ GraphQL (Skill to Learn)
+> ✅ TypeScript (Skill to Learn)
+> ✅ Node.js (Primary Skill)
+>
+> **Confidence: High** - Your profile is complete
+
+<Tip>
+  Use score breakdowns to understand WHY an event is recommended. If a component seems off, update your profile accordingly.
+</Tip>
+
+## Algorithm Versions
+
+### Version History
+
+TechCal's recommendation algorithm evolves over time:
+
+- **v1.0** (Launch): Profile-based scoring only
+- **v1.5** (Current): Added behavioral boost and diversity
+- **v2.0** (Coming Soon): AI-powered semantic matching, contextual awareness
+
+<Note>
+  Your scores may change slightly when we release algorithm updates. We always announce changes in the [Changelog](/changelog).
+</Note>
+
+## Tips for Better Recommendations
+
+<AccordionGroup>
+  <Accordion title="Be Specific with Skills">
+    Instead of "Web Development", list specific frameworks: React, Vue, Angular, Next.js. Specificity improves matching.
+  </Accordion>
+
+  <Accordion title="Update Your Profile Regularly">
+    As you learn new skills or your goals change, update your profile. We recommend reviewing it monthly.
+  </Accordion>
+
+  <Accordion title="Mark Events as Attended">
+    After attending, mark events as attended and rate them. This trains the behavioral model.
+  </Accordion>
+
+  <Accordion title="Use Feedback Buttons">
+    See an irrelevant recommendation? Click "Not Interested" so TechCal learns your preferences.
+  </Accordion>
+
+  <Accordion title="Set a Realistic Budget">
+    If you set "Free Only" but then attend paid events, TechCal gets confused. Be honest about your budget.
+  </Accordion>
+</AccordionGroup>
+
+## FAQs
+
+<AccordionGroup>
+  <Accordion title="Why is a low-score event ranked high?">
+    **Possible reasons**:
+    - It's trending (high popularity overrides low personal score)
+    - Diversity algorithm boosted it for variety
+    - Your network is attending (social boost)
+
+    You can always sort by "Career Impact" to see purely score-ranked results.
+  </Accordion>
+
+  <Accordion title="Can I disable behavioral tracking?">
+    Yes. Go to **Settings** → **Privacy** → **Personalization** and toggle off "Enable Behavioral Boost". Scores will revert to profile-only matching.
+  </Accordion>
+
+  <Accordion title="How often are scores recalculated?">
+    Scores update:
+    - **Real-time**: When you update your profile
+    - **Daily**: When event details change
+    - **Weekly**: When behavioral models retrain
+  </Accordion>
+
+  <Accordion title="Do scores consider location?">
+    Yes, indirectly. If an event is far from your location (set in profile), the **Networking Value** score may decrease slightly because in-person attendance is less likely.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Complete Your Profile" icon="user" href="/quickstart">
+    Improve your recommendations by filling out your career profile
+  </Card>
+  <Card title="Discover Events" icon="compass" href="/features/discovery">
+    Browse personalized event recommendations now
+  </Card>
+</CardGroup>

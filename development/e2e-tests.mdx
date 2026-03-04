@@ -1,0 +1,516 @@
+---
+title: End-to-End Testing with Playwright
+description: Run E2E tests, use interactive UI mode, test against staging, and understand the test structure
+---
+
+TechCal uses [Playwright](https://playwright.dev/) for end-to-end testing. E2E tests validate critical user flows across the full application stack.
+
+## Running E2E Tests
+
+### Run All E2E Tests
+
+Execute the complete E2E test suite:
+
+```bash
+npm run test:e2e
+```
+
+This:
+1. Starts the development server (`npm run dev`) on port 3000
+2. Waits for the server to be ready
+3. Runs all tests in `tests/*.spec.ts`
+4. Generates an HTML report
+
+<Note>
+  Playwright automatically starts and stops the dev server. No need to run `npm run dev` separately.
+</Note>
+
+### Interactive UI Mode
+
+Run tests with Playwright's interactive UI:
+
+```bash
+npm run test:e2e:ui
+```
+
+UI mode provides:
+- **Visual test runner** - See tests execute in real-time
+- **Time travel debugging** - Step through each action
+- **DOM snapshots** - Inspect page state at each step
+- **Network inspector** - View all network requests
+- **Pick locator** - Generate selectors interactively
+
+Ideal for:
+- Writing new tests
+- Debugging test failures
+- Understanding test flow
+
+### Test Against Staging
+
+Run E2E tests against a deployed staging environment:
+
+```bash
+npm run test:e2e:staging
+```
+
+Uses `playwright.staging.config.ts` with a different base URL:
+
+```typescript playwright.staging.config.ts
+export default defineConfig({
+  use: {
+    baseURL: 'https://staging.techcal.com',
+  },
+  // No webServer - tests against live deployment
+});
+```
+
+<Warning>
+  Staging tests require valid credentials. Ensure `E2E_EMAIL` and `E2E_PASSWORD` environment variables point to a staging test account.
+</Warning>
+
+## Test Configuration
+
+Playwright configuration in `playwright.config.ts`:
+
+```typescript
+import { defineConfig } from '@playwright/test';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
+
+export default defineConfig({
+  testDir: './tests',
+  testMatch: /.*\.spec\.ts/,
+  
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  
+  reporter: 'html',
+  
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+  },
+  
+  projects: [
+    {
+      name: 'chromium',
+      use: { channel: 'chromium' },
+    },
+  ],
+  
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  },
+});
+```
+
+### Key Configuration Options
+
+- **`testDir`** - Tests directory (`./tests`)
+- **`testMatch`** - Pattern for test files (`*.spec.ts`)
+- **`fullyParallel`** - Run tests in parallel
+- **`retries`** - Retry failed tests (2 times on CI)
+- **`workers`** - Number of parallel workers
+- **`trace`** - Collect traces on first retry (for debugging)
+- **`webServer`** - Auto-start dev server
+
+## Test Structure
+
+### Golden Path Test
+
+The main E2E test validates the critical user journey:
+
+```typescript tests/golden-path.spec.ts
+import { test, expect, type Page } from '@playwright/test';
+
+const TEST_EMAIL = process.env.E2E_EMAIL ?? 'testuser@example.com';
+const TEST_PASSWORD = process.env.E2E_PASSWORD ?? 'StrongPassword123';
+
+test.describe('Golden Path', () => {
+  test('user can sign in, reach discovery, and navigate core views', async ({ page }) => {
+    // Step 1: Open login page
+    await test.step('Open login page', async () => {
+      await page.goto('http://localhost:3000/login');
+      await page.waitForLoadState('networkidle');
+    });
+
+    // Step 2: Authenticate
+    await test.step('Authenticate', async () => {
+      await page.getByLabel(/Email address/i).fill(TEST_EMAIL);
+      await page.getByLabel(/Password/i).fill(TEST_PASSWORD);
+      await page.getByRole('button', { name: /^Sign In$/i }).click();
+      
+      await expect(page).toHaveURL(/\/discover/, { timeout: 15000 });
+    });
+
+    // Step 3: Navigate to calendar
+    await test.step('Navigate to calendar', async () => {
+      await page.goto('http://localhost:3000/calendar');
+      await expect(page).toHaveURL(/\/calendar\?view=month/);
+      
+      await expect(
+        page.getByRole('button', { name: 'Next month' })
+      ).toBeVisible();
+    });
+
+    // Step 4: Return to discover
+    await test.step('Return to discover', async () => {
+      await page.goto('http://localhost:3000/discover');
+      await expect(page.getByRole('heading', { name: /For You/i })).toBeVisible();
+    });
+  });
+});
+```
+
+### Test Steps
+
+Use `test.step()` to organize tests into logical sections:
+
+```typescript
+await test.step('Descriptive step name', async () => {
+  // Test actions and assertions
+});
+```
+
+Benefits:
+- Better test reports
+- Clearer failure messages
+- Easy to locate issues
+
+## Writing E2E Tests
+
+### Page Navigation
+
+```typescript
+// Navigate to a page
+await page.goto('http://localhost:3000/discover');
+
+// Wait for network to settle
+await page.waitForLoadState('networkidle');
+
+// Wait for specific URL
+await expect(page).toHaveURL(/\/discover/);
+```
+
+### Interacting with Elements
+
+```typescript
+// Click a button by role and name
+await page.getByRole('button', { name: 'Sign In' }).click();
+
+// Fill an input by label
+await page.getByLabel('Email address').fill('user@example.com');
+
+// Select from dropdown
+await page.getByRole('combobox', { name: 'Role' }).selectOption('Software Engineer');
+
+// Check a checkbox
+await page.getByRole('checkbox', { name: 'Accept terms' }).check();
+```
+
+### Assertions
+
+```typescript
+// Element visibility
+await expect(page.getByText('Welcome')).toBeVisible();
+
+// Element count
+await expect(page.getByRole('article')).toHaveCount(10);
+
+// Text content
+await expect(page.getByRole('heading')).toHaveText('Events');
+
+// URL matching
+await expect(page).toHaveURL(/\/dashboard/);
+
+// Attribute value
+await expect(page.getByRole('link')).toHaveAttribute('href', '/about');
+```
+
+### Waiting Strategies
+
+```typescript
+// Wait for element to be visible
+await page.waitForSelector('[data-testid="event-card"]');
+
+// Wait for element to disappear
+await page.getByText('Loading...').waitFor({ state: 'hidden' });
+
+// Wait for network request
+await page.waitForResponse(response => 
+  response.url().includes('/api/events') && response.status() === 200
+);
+
+// Wait for custom condition
+await page.waitForFunction(() => 
+  document.querySelectorAll('.event-card').length > 0
+);
+```
+
+## Test Helpers
+
+### Supabase Test Helper
+
+Helper functions for E2E test setup:
+
+```typescript tests/helpers/supabase-test-helper.ts
+import { createClient } from '@supabase/supabase-js';
+
+// Create admin client for test operations
+export function createAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
+
+// Auto-confirm user email for testing
+export async function confirmUserEmail(email: string) {
+  const admin = createAdminClient();
+  const { data } = await admin.auth.admin.listUsers();
+  const user = data.users.find(u => u.email === email);
+  
+  if (user) {
+    await admin.auth.admin.updateUserById(user.id, {
+      email_confirm: true,
+    });
+  }
+}
+
+// Delete test user
+export async function deleteTestUser(email: string) {
+  const admin = createAdminClient();
+  const { data } = await admin.auth.admin.listUsers();
+  const user = data.users.find(u => u.email === email);
+  
+  if (user) {
+    await admin.auth.admin.deleteUser(user.id);
+  }
+}
+```
+
+Usage:
+
+```typescript
+import { confirmUserEmail, deleteTestUser } from './helpers/supabase-test-helper';
+
+test.beforeAll(async () => {
+  await confirmUserEmail('testuser@example.com');
+});
+
+test.afterAll(async () => {
+  await deleteTestUser('testuser@example.com');
+});
+```
+
+## Environment Variables
+
+E2E tests use environment variables from `.env.local`:
+
+```bash .env.local
+# Test account credentials
+E2E_EMAIL=testuser@example.com
+E2E_PASSWORD=StrongPassword123
+
+# Supabase (for test helpers)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+<Warning>
+  Use a dedicated test account for E2E tests. Don't use production credentials.
+</Warning>
+
+## Debugging Tests
+
+### View Test Report
+
+After running tests, view the HTML report:
+
+```bash
+npx playwright show-report
+```
+
+The report shows:
+- Test pass/fail status
+- Execution time
+- Screenshots on failure
+- Traces (if enabled)
+
+### Debug Mode
+
+Run tests in debug mode with step-by-step execution:
+
+```bash
+npx playwright test --debug
+```
+
+### Headed Mode
+
+See the browser window while tests run:
+
+```bash
+npx playwright test --headed
+```
+
+### Slow Motion
+
+Slow down test execution:
+
+```bash
+npx playwright test --headed --slow-mo=1000
+```
+
+### Screenshots & Videos
+
+Capture screenshots on failure:
+
+```typescript
+export default defineConfig({
+  use: {
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
+});
+```
+
+## CI/CD Integration
+
+Run E2E tests on CI:
+
+```yaml .github/workflows/e2e.yml
+name: E2E Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use Semantic Locators">
+    Prefer role-based selectors over CSS:
+    
+    ```typescript
+    // Good
+    await page.getByRole('button', { name: 'Submit' });
+    
+    // Avoid
+    await page.locator('.submit-button');
+    ```
+  </Step>
+
+  <Step title="Wait for Network Idle">
+    Let the page fully load before assertions:
+    
+    ```typescript
+    await page.goto('/discover');
+    await page.waitForLoadState('networkidle');
+    ```
+  </Step>
+
+  <Step title="Use Test Steps">
+    Organize tests with descriptive steps:
+    
+    ```typescript
+    await test.step('User signs in', async () => {
+      // Login actions
+    });
+    ```
+  </Step>
+
+  <Step title="Handle Flakiness">
+    Use retry logic for timing-sensitive operations:
+    
+    ```typescript
+    await expect(async () => {
+      const count = await page.getByRole('article').count();
+      expect(count).toBeGreaterThan(0);
+    }).toPass({ timeout: 5000 });
+    ```
+  </Step>
+</Steps>
+
+## Common Issues
+
+### Test Timeouts
+
+Increase timeout for slow operations:
+
+```typescript
+test('slow test', async ({ page }) => {
+  // Test code
+}, { timeout: 60000 }); // 60 seconds
+```
+
+### Flaky Tests
+
+Stabilize tests with explicit waits:
+
+```typescript
+// Wait for element to be stable
+await page.getByRole('button').waitFor({ state: 'visible' });
+await page.waitForTimeout(100); // Small delay
+await page.getByRole('button').click();
+```
+
+### Session Persistence
+
+Reuse authenticated sessions:
+
+```typescript
+import { test as setup } from '@playwright/test';
+
+setup('authenticate', async ({ page }) => {
+  await page.goto('/login');
+  // Login...
+  await page.context().storageState({ path: 'auth.json' });
+});
+
+test.use({ storageState: 'auth.json' });
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Unit Testing" icon="flask" href="/development/testing">
+    Write unit tests with Vitest
+  </Card>
+  
+  <Card title="Deployment" icon="rocket" href="/development/deployment">
+    Deploy after E2E tests pass
+  </Card>
+</CardGroup>

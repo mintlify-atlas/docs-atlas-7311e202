@@ -1,0 +1,497 @@
+---
+title: Deployment to Vercel
+description: Deploy TechCal to production with environment configuration, cron jobs, feature flags, and verification
+---
+
+TechCal is optimized for deployment on [Vercel](https://vercel.com). This guide covers production deployment, environment setup, and post-deployment verification.
+
+## Quick Deploy
+
+Deploy to Vercel with one click:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-org/techcal)
+
+<Note>
+  Replace the repository URL with your actual GitHub repository.
+</Note>
+
+## Manual Deployment
+
+### Prerequisites
+
+<Steps>
+  <Step title="Vercel Account">
+    Create a free account at [vercel.com](https://vercel.com).
+  </Step>
+
+  <Step title="Install Vercel CLI">
+    ```bash
+    npm install -g vercel
+    ```
+  </Step>
+
+  <Step title="Link Project">
+    Connect your local project to Vercel:
+    
+    ```bash
+    vercel link
+    ```
+  </Step>
+</Steps>
+
+### Deploy to Production
+
+```bash
+vercel --prod
+```
+
+This:
+1. Builds the Next.js application
+2. Uploads to Vercel's edge network
+3. Assigns a production URL
+4. Runs post-deployment checks
+
+## Environment Configuration
+
+### Required Environment Variables
+
+Set these in Vercel dashboard (Settings → Environment Variables):
+
+<Tabs>
+  <Tab title="Production">
+    ```bash
+    # Supabase
+    NEXT_PUBLIC_SUPABASE_URL=https://production.supabase.co
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_production_anon_key
+    SUPABASE_SERVICE_ROLE_KEY=your_production_service_role_key
+    
+    # Cron Jobs
+    CRON_SECRET=generate_with_openssl_rand_hex_32
+    
+    # Monitoring
+    NEXT_PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project
+    SENTRY_AUTH_TOKEN=your_sentry_auth_token
+    SENTRY_ENABLED=true
+    
+    # Analytics
+    NEXT_PUBLIC_POSTHOG_KEY=phc_your_production_key
+    
+    # Site URL
+    NEXT_PUBLIC_SITE_URL=https://techcal.com
+    ```
+  </Tab>
+
+  <Tab title="Staging">
+    ```bash
+    # Supabase (separate staging project)
+    NEXT_PUBLIC_SUPABASE_URL=https://staging.supabase.co
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_staging_anon_key
+    SUPABASE_SERVICE_ROLE_KEY=your_staging_service_role_key
+    
+    # Cron Jobs
+    CRON_SECRET=different_secret_for_staging
+    
+    # Monitoring (staging Sentry project)
+    NEXT_PUBLIC_SENTRY_DSN=https://staging-dsn@sentry.io/project
+    SENTRY_ENABLED=true
+    SENTRY_DEBUG=true
+    
+    # Site URL
+    NEXT_PUBLIC_SITE_URL=https://staging.techcal.com
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  **Never reuse production credentials in staging.** Use separate Supabase projects, Sentry projects, and secrets for each environment.
+</Warning>
+
+### Optional Environment Variables
+
+Configure feature flags and integrations:
+
+```bash
+# Feature Flags
+DISCOVERY_SCORING=server
+DISCOVERY_RERANK=advanced
+NEXT_PUBLIC_ENABLE_BEHAVIORAL_BOOST=true
+NEXT_PUBLIC_ENABLE_DIVERSITY_ENHANCEMENT=true
+
+# Rate Limiting (Vercel KV)
+KV_REST_API_URL=auto_populated_by_vercel
+KV_REST_API_TOKEN=auto_populated_by_vercel
+
+# Ingestion
+INGESTION_VERIFY_SPEAKERS=true
+
+# Google Calendar Integration
+GOOGLE_OAUTH_CLIENT_ID=your_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=your_client_secret
+TOKEN_ENCRYPTION_KEY=your_32_byte_hex_key
+
+# Paddle Payments
+NEXT_PUBLIC_PADDLE_ENVIRONMENT=production
+NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=your_paddle_token
+```
+
+See the [Environment Variables](/development/environment) page for complete documentation.
+
+### Environment Scope
+
+Set variables for specific environments:
+
+- **Production** - Production deployments only
+- **Preview** - Pull request previews
+- **Development** - Local development (`.env.local`)
+
+<Note>
+  Vercel automatically populates `VERCEL_URL` with the deployment URL. Use this for dynamic redirects.
+</Note>
+
+## Vercel KV Setup
+
+TechCal uses Vercel KV for rate limiting and caching:
+
+<Steps>
+  <Step title="Create KV Database">
+    In Vercel dashboard:
+    1. Navigate to Storage → Create Database
+    2. Select KV (Redis)
+    3. Name it (e.g., `techcal-kv`)
+    4. Select region (same as your deployment)
+  </Step>
+
+  <Step title="Link to Project">
+    Connect the KV database to your project:
+    1. Go to your project settings
+    2. Navigate to Storage
+    3. Link the KV database
+    
+    This automatically adds `KV_REST_API_URL` and `KV_REST_API_TOKEN` to your environment.
+  </Step>
+</Steps>
+
+## Cron Jobs
+
+TechCal uses Vercel Cron for scheduled tasks. Configuration in `vercel.json`:
+
+```json vercel.json
+{
+  "crons": [
+    {
+      "path": "/api/cron/ingestion",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/enrichment",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}
+```
+
+### Cron Schedule
+
+- **Ingestion** - Runs daily at 2:00 AM UTC
+- **Enrichment** - Runs daily at 3:00 AM UTC
+
+### Cron Authentication
+
+Cron endpoints require the `CRON_SECRET` header:
+
+```typescript src/app/api/cron/ingestion/route.ts
+if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+  return new Response('Unauthorized', { status: 401 });
+}
+```
+
+Vercel automatically includes this header when invoking cron jobs.
+
+### Manual Cron Trigger
+
+Test cron jobs manually:
+
+```bash
+curl -X POST https://your-domain.com/api/cron/ingestion \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
+
+<Note>
+  Manual triggers require admin authentication. See the ingestion documentation for details.
+</Note>
+
+## Feature Flags
+
+Toggle features without redeploying:
+
+### Scoring Strategy
+
+```bash
+# Advanced scoring (recommended)
+DISCOVERY_SCORING=server
+
+# Legacy scoring
+DISCOVERY_SCORING=legacy
+
+# Shadow mode (A/B test both strategies)
+DISCOVERY_SCORING=shadow
+```
+
+### Reranking Strategy
+
+```bash
+# Behavioral reranking (recommended)
+DISCOVERY_RERANK=advanced
+
+# No reranking
+DISCOVERY_RERANK=off
+
+# Shadow mode (compare both)
+DISCOVERY_RERANK=shadow
+```
+
+### Client-Side Flags
+
+```bash
+# Enable/disable features
+NEXT_PUBLIC_ENABLE_BEHAVIORAL_BOOST=true|false
+NEXT_PUBLIC_ENABLE_DIVERSITY_ENHANCEMENT=true|false
+NEXT_PUBLIC_SHOW_BUDGET_HINT=true|false
+```
+
+<Warning>
+  Feature flags with `NEXT_PUBLIC_` prefix require a rebuild to take effect. Server-only flags (like `DISCOVERY_SCORING`) apply immediately.
+</Warning>
+
+## Build Configuration
+
+### Next.js Build
+
+Vercel automatically detects Next.js and uses:
+
+- **Framework**: Next.js
+- **Build Command**: `npm run build`
+- **Output Directory**: `.next`
+- **Install Command**: `npm install`
+- **Node Version**: Detected from `package.json` engines (20.9+)
+
+### Build Environment Variables
+
+Some variables are needed at build time:
+
+```bash
+# Required at build time
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# Optional but recommended
+SENTRY_AUTH_TOKEN  # For uploading source maps
+```
+
+### Build Optimizations
+
+TechCal includes optimizations:
+- **Bundle analyzer** - Run `npm run build:analyze` locally
+- **Image optimization** - Automatic via Next.js Image component
+- **Font optimization** - Automatic font subsetting
+- **Code splitting** - Route-based and lazy loading
+
+## Post-Deployment Verification
+
+### Automated Verification
+
+Run the verification suite after deployment:
+
+```bash
+npm run verify:all
+```
+
+This validates:
+1. **Production config** - Environment variables and API endpoints
+2. **Budget filtering** - Event filtering logic
+3. **Analytics** - Telemetry integration
+
+<Note>
+  Always run `verify:all` before merging to main. This catches configuration drift and algorithm regressions.
+</Note>
+
+### Manual Verification Checklist
+
+<Steps>
+  <Step title="Core Flows">
+    Test critical user journeys:
+    - ✅ Sign up / Sign in
+    - ✅ Complete onboarding
+    - ✅ View discovery feed
+    - ✅ Navigate to calendar
+    - ✅ View dashboard analytics
+  </Step>
+
+  <Step title="API Endpoints">
+    Verify key endpoints:
+    - ✅ `/api/events/filtered`
+    - ✅ `/api/events/recommendations`
+    - ✅ `/api/dashboard/analytics`
+  </Step>
+
+  <Step title="Cron Jobs">
+    Check Vercel dashboard:
+    - ✅ Cron jobs are scheduled
+    - ✅ View recent execution logs
+    - ✅ No errors in cron output
+  </Step>
+
+  <Step title="Monitoring">
+    Verify Sentry integration:
+    - ✅ Errors appear in Sentry dashboard
+    - ✅ Breadcrumbs are captured
+    - ✅ Source maps are uploaded
+  </Step>
+
+  <Step title="Performance">
+    Check Core Web Vitals:
+    - ✅ LCP < 2.5s
+    - ✅ FID < 100ms
+    - ✅ CLS < 0.1
+    
+    Use Vercel Analytics or Lighthouse.
+  </Step>
+</Steps>
+
+### E2E Tests Against Production
+
+Run E2E tests against staging/production:
+
+```bash
+npm run test:e2e:staging
+```
+
+Configure in `playwright.staging.config.ts`:
+
+```typescript
+export default defineConfig({
+  use: {
+    baseURL: 'https://staging.techcal.com',
+  },
+});
+```
+
+## Rollback Strategy
+
+If deployment fails:
+
+### Instant Rollback
+
+Vercel keeps previous deployments. Rollback instantly:
+
+1. Go to Vercel dashboard → Deployments
+2. Find the last working deployment
+3. Click "Promote to Production"
+
+### Revert Git Commit
+
+Revert code and redeploy:
+
+```bash
+git revert HEAD
+git push origin main
+```
+
+Vercel automatically deploys the reverted commit.
+
+## CI/CD Integration
+
+### GitHub Integration
+
+Vercel automatically deploys:
+- **Production** - Commits to `main` branch
+- **Preview** - Pull requests
+
+### Preview Deployments
+
+Every PR gets a unique preview URL:
+
+```
+https://techcal-git-feature-branch-yourteam.vercel.app
+```
+
+Use preview URLs for:
+- Design review
+- QA testing
+- Stakeholder demos
+
+### Deployment Protection
+
+Enable protection rules in Vercel:
+- **Production branch** - `main` only
+- **Build checks** - Tests must pass
+- **Preview comments** - Auto-comment on PRs
+
+## Performance Monitoring
+
+### Vercel Analytics
+
+Enable in Vercel dashboard:
+1. Go to Analytics tab
+2. Enable Real Experience Score
+3. View Core Web Vitals, page performance, and user metrics
+
+### Sentry Performance
+
+TechCal sends performance data to Sentry:
+
+```typescript sentry.server.config.ts
+Sentry.init({
+  tracesSampleRate: 0.1, // Sample 10% of transactions
+});
+```
+
+Monitor:
+- API response times
+- Page load performance
+- Database query duration
+
+## Troubleshooting
+
+### Build Failures
+
+Check Vercel build logs:
+1. Navigate to Deployments → Failed deployment
+2. View build logs
+3. Common issues:
+   - Missing environment variables
+   - TypeScript errors
+   - Dependency conflicts
+
+### Runtime Errors
+
+Check Vercel function logs:
+1. Navigate to Deployments → Active deployment
+2. Click "Functions" tab
+3. View real-time logs
+
+### Environment Variable Issues
+
+Verify variables are set:
+
+```bash
+vercel env ls
+```
+
+Pull production variables locally:
+
+```bash
+vercel env pull .env.local
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Monitoring" icon="chart-line" href="/development/monitoring">
+    Set up comprehensive monitoring and telemetry
+  </Card>
+  
+  <Card title="Environment Variables" icon="gear" href="/development/environment">
+    Complete environment variable reference
+  </Card>
+</CardGroup>

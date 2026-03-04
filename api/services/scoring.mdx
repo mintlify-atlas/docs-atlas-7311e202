@@ -1,0 +1,466 @@
+---
+title: "Scoring Service Internals"
+description: "How TechCal scores events for career impact using alignment core, strategy selection, and behavioral reranking"
+---
+
+## Overview
+
+TechCal's scoring system ranks events by career impact using a multi-stage pipeline:
+
+1. **Base Alignment Core** - Pure skill/goal/interest matching
+2. **Strategy Selection** - Choose scoring algorithm (server/legacy/shadow)
+3. **Location Adjustment** - Proximity and timezone scoring
+4. **Behavioral Reranking** - Optional user interaction history
+5. **Diversity Enhancement** - Ensure variety in recommendations
+
+<Note>
+All scoring is server-side. Client never computes scores directly.
+</Note>
+
+## Scoring Strategies
+
+### Strategy Configuration
+
+Configure via environment variables:
+
+```bash
+# Scoring algorithm selection
+DISCOVERY_SCORING=server|legacy|shadow
+
+# Behavioral reranking
+DISCOVERY_RERANK=off|advanced|shadow
+
+# Feature flags
+NEXT_PUBLIC_ENABLE_BEHAVIORAL_BOOST=true
+NEXT_PUBLIC_ENABLE_DIVERSITY_ENHANCEMENT=true
+```
+
+### Available Strategies
+
+<Tabs>
+  <Tab title="server (default)">
+    **Alignment Core v1**
+    
+    Pure function-based scoring with no external dependencies.
+    
+    **Pros:**
+    - Fast (< 5ms per event)
+    - Deterministic and testable
+    - DRY with recommendations
+    - Well-documented components
+    
+    **Components:**
+    - Skill relevance (40%)
+    - Career stage match (20%)
+    - Networking value (15%)
+    - Industry relevance (15%)
+    - Timing bonus (10%)
+    
+    **Use when:** You want consistent, explainable scores
+  </Tab>
+  
+  <Tab title="legacy">
+    **Enhanced Scoring Service**
+    
+    Legacy scoring with additional heuristics and behavioral signals.
+    
+    **Pros:**
+    - Battle-tested in production
+    - Includes speaker quality heuristics
+    - Supports behavioral boost
+    
+    **Cons:**
+    - Slower (10-20ms per event)
+    - More complex maintenance
+    
+    **Use when:** Migrating from old system or need backward compatibility
+  </Tab>
+  
+  <Tab title="shadow">
+    **Shadow Mode**
+    
+    Runs both strategies and logs deltas for comparison.
+    
+    **Telemetry logged:**
+    - Average absolute delta
+    - Max absolute delta
+    - Large delta count (≥15 points)
+    - Top 5 divergent events
+    
+    **Use when:** Testing new scoring changes in production
+  </Tab>
+</Tabs>
+
+## Alignment Core
+
+### Base Scorer
+
+Pure function at `src/lib/recommendation/baseScorer.ts`:
+
+```typescript
+export function calculateBaseScore(
+  event: Event,
+  careerProfile: CareerProfile | null
+): AlignmentResult {
+  // Returns 0-100 score with detailed breakdown
+}
+```
+
+### Component Weights
+
+| Component | Weight | Description |
+|-----------|--------|-------------|
+| **Skill Relevance** | 40% | Matches event tags to user skills (primary + learning) |
+| **Career Stage** | 20% | Seniority and role alignment |
+| **Networking Value** | 15% | Alignment with networking goals |
+| **Industry Relevance** | 15% | Industry and interest matching |
+| **Timing Bonus** | 10% | Urgency, registration deadline, date alignment |
+
+### Skill Matching Algorithm
+
+```typescript
+// Normalize and fuzzy match skills
+const userSkills = normalizeSkills([
+  ...profile.primarySkills,
+  ...profile.skillsToLearn,
+  ...profile.interests
+]);
+
+const eventTags = normalizeSkills(
+  event.tags.map(t => t.name)
+);
+
+// Calculate Jaccard similarity
+const intersection = userSkills.filter(s => 
+  eventTags.some(tag => fuzzyMatch(s, tag))
+);
+
+const union = new Set([...userSkills, ...eventTags]);
+
+const skillScore = (intersection.length / union.size) * 100;
+```
+
+### Career Stage Matching
+
+```typescript
+const SENIORITY_LEVELS = {
+  'entry-level': 1,
+  'junior': 2,
+  'mid-level': 3,
+  'senior': 4,
+  'staff': 5,
+  'principal': 6,
+  'lead': 4,
+  'manager': 4,
+  'director': 5,
+  'vp': 6
+};
+
+// Match event difficulty to user seniority
+const userLevel = SENIORITY_LEVELS[profile.seniority];
+const eventLevel = getEventDifficultyLevel(event);
+
+const stageDelta = Math.abs(userLevel - eventLevel);
+const stageScore = Math.max(0, 100 - (stageDelta * 25));
+```
+
+## Enrichment Service
+
+### Enrichment Flow
+
+Located at `src/services/careerImpactEnrichmentService.ts`:
+
+```typescript
+export async function enrichEventsWithCareerImpact(
+  events: Event[],
+  careerProfile: CareerProfile | null,
+  supabaseClient: SupabaseClientType,
+  userId?: string,
+  userLocation?: UserLocation | null,
+  options: EnrichmentOptions = {}
+): Promise<EventWithCareerImpact[]>
+```
+
+### Enrichment Pipeline
+
+1. **Check Cache** - Look for cached scores in Redis
+   - Cache key: `career-impact:v2:{userId}:{profileHash}:{eventHash}`
+   - TTL: 1 hour
+
+2. **Calculate Scores** - For cache misses
+   - Use selected strategy (server/legacy)
+   - Apply location adjustment
+   - Add metadata (algorithm version, timestamp)
+
+3. **Write Cache** - Store new scores
+   - Batch write via Redis pipeline
+   - Skip for cold start users
+
+4. **Apply Reranking** - Optional behavioral reranking
+   - Only if `allowRerank=true` and `DISCOVERY_RERANK=advanced`
+
+### Cold Start Handling
+
+For users without career profiles:
+
+```typescript
+if (!careerProfile) {
+  return {
+    overall: calculateQualityScore(event), // 0-100
+    confidence: 0.6, // Lower confidence
+    components: {
+      skillRelevance: 0,
+      careerStageMatch: 0,
+      networkingValue: 0,
+      industryRelevance: 0,
+      timingBonus: calculateTimingBonus(event)
+    },
+    explanation: {
+      reasons: ['Complete your profile for better recommendations'],
+      confidenceFactors: ['Cold start scoring']
+    }
+  };
+}
+```
+
+### Quality Score (Cold Start)
+
+Based on event attributes only:
+- Speaker quality (30%)
+- Event popularity (25%)
+- Organizer reputation (20%)
+- Description quality (15%)
+- Recency (10%)
+
+## Location Scoring
+
+### Proximity Adjustment
+
+Located at `src/services/locationScoringService.ts`:
+
+```typescript
+export function calculateLocationScore(
+  event: Event,
+  userLocation?: UserLocation | null
+): {
+  score: number;        // 0.5 to 1.0
+  reason: string;
+  isVirtual: boolean;
+}
+```
+
+### Scoring Rules
+
+| Condition | Score | Adjustment |
+|-----------|-------|------------|
+| Virtual event | 1.0 | No penalty |
+| Same city | 1.0 | No penalty |
+| Same country | 0.9 | -1 point |
+| Different country | 0.8 | -2 points |
+| Unknown location | 0.85 | -1.5 points |
+
+### Application
+
+Location score is applied as multiplier:
+
+```typescript
+const baseScore = calculateBaseScore(event, profile);
+const locationResult = calculateLocationScore(event, userLocation);
+
+const adjustment = (locationResult.score - 0.8) * 10; // -3 to +2
+const finalScore = Math.max(0, Math.min(100, 
+  baseScore.overall + adjustment
+));
+```
+
+## Behavioral Reranking
+
+### Rerank Strategy
+
+Located at `src/services/recommendations/behavioralReranker.ts`:
+
+```typescript
+export async function rerankWithBehavioral(
+  events: EventWithCareerImpact[],
+  careerProfile: CareerProfile,
+  supabase: SupabaseClientType,
+  options: { topK?: number; userId?: string }
+): Promise<EventWithCareerImpact[]>
+```
+
+### Behavioral Signals
+
+| Signal | Weight | Source |
+|--------|--------|--------|
+| **Bookmarked** | +15 | user_events.is_bookmarked |
+| **Attended** | +20 | user_events.status=attended |
+| **Viewed** | +5 | telemetry.event_viewed |
+| **Similar Saved** | +10 | Similar tags to saved events |
+| **Similar Attended** | +12 | Similar tags to attended events |
+
+### Reranking Algorithm
+
+```typescript
+// 1. Fetch user history
+const userHistory = await getUserEventHistory(userId, supabase);
+
+// 2. Extract tag frequencies
+const savedTags = extractTags(userHistory.saved);
+const attendedTags = extractTags(userHistory.attended);
+
+// 3. Calculate behavioral boost
+events.forEach(event => {
+  let boost = 0;
+  
+  if (hasTagOverlap(event, savedTags)) {
+    boost += 10;
+  }
+  
+  if (hasTagOverlap(event, attendedTags)) {
+    boost += 12;
+  }
+  
+  event.careerImpact.overall += boost;
+});
+
+// 4. Re-sort by boosted scores
+return events.sort((a, b) => 
+  b.careerImpact.overall - a.careerImpact.overall
+);
+```
+
+### Shadow Mode
+
+When `DISCOVERY_RERANK=shadow`:
+
+1. Compute reranked order
+2. Keep original order
+3. Log Kendall's tau correlation
+4. Log top rank changes
+5. Send to Sentry as breadcrumb
+
+## Cache Strategy
+
+### Redis Cache Keys
+
+```typescript
+const CACHE_PREFIX = 'career-impact:v2';
+
+function getCacheKey(
+  userId: string,
+  eventId: string,
+  cacheScope: CacheScope
+): string {
+  return [
+    CACHE_PREFIX,
+    userId,
+    cacheScope.strategyFingerprint,     // e.g., 'alignment-core-v1'
+    cacheScope.profileFingerprint,      // SHA-1 of profile fields
+    cacheScope.locationFingerprint,     // SHA-1 of location
+    eventId
+  ].join(':');
+}
+```
+
+### Cache Invalidation
+
+Scores are invalidated when:
+- User updates career profile → Clear all user scores
+- Event data changes → Clear event-specific scores
+- Strategy version changes → Clear all scores (new prefix)
+- Cache TTL expires (1 hour) → Automatic eviction
+
+### Cache Performance
+
+Typical cache metrics:
+- **Hit rate:** 70-85%
+- **Miss penalty:** 5-10ms per event
+- **Batch fetch time:** 20-50ms for 50 events
+
+## Telemetry
+
+### Scoring Telemetry
+
+Sampled at 10% rate:
+
+```typescript
+interface ScoringTelemetry {
+  strategy: ScoringStrategy;
+  eventCount: number;
+  avgScore: number;
+  avgReasonCount: number;
+  processingTimeMs: number;
+  cacheHitCount: number;
+  cacheMissCount: number;
+  scoreDistribution: {
+    high: number;      // 80+
+    moderate: number;  // 50-79
+    low: number;       // <50
+  };
+}
+```
+
+### Shadow Mode Telemetry
+
+Logged to Sentry:
+
+```typescript
+{
+  category: 'scoring-delta',
+  level: 'info',
+  data: {
+    sampleSize: 30,
+    avgAbsDelta: 8.42,
+    maxAbsDelta: 24.5,
+    largeDeltaCount: 3,
+    threshold: 15
+  }
+}
+```
+
+## Performance Optimization
+
+### Batch Processing
+
+```typescript
+// Fetch cached scores in parallel
+const cacheKeys = events.map(e => getCacheKey(userId, e.id));
+const cachedScores = await kv.mget(...cacheKeys);
+
+// Calculate only cache misses
+const eventsToScore = events.filter((e, i) => !cachedScores[i]);
+const newScores = eventsToScore.map(scoreWithAlignmentCore);
+
+// Batch write new scores
+const pipeline = kv.pipeline();
+newScores.forEach(score => pipeline.set(key, score, { ex: 3600 }));
+await pipeline.exec();
+```
+
+### Parallelization
+
+- Cache reads: Parallel via Redis MGET
+- Score calculation: Parallel via Promise.all
+- Cache writes: Parallel via Redis pipeline
+
+### Early Termination
+
+Skip expensive operations when not needed:
+
+```typescript
+if (fastSearch) {
+  // Skip enrichment and counts
+  return events;
+}
+
+if (!allowRerank || rerank === 'off') {
+  // Skip behavioral reranking
+  return enrichedEvents;
+}
+```
+
+## Related Documentation
+
+- [POST /api/events/filtered](/api/events/filtered) - Uses scoring for event ranking
+- [GET /api/events/recommendations](/api/events/recommendations) - Uses scoring + diversity
+- [GET /api/profile/career](/api/profile/career) - Profile data used for scoring

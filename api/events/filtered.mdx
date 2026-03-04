@@ -1,0 +1,394 @@
+---
+title: "GET /api/events/filtered"
+description: "Server-side event filtering with pagination, search, and career impact scoring"
+---
+
+## Overview
+
+The filtered events API provides powerful server-side filtering with full-text search, career-impact scoring, and intelligent caching. It supports pagination, multi-field search, tag-based filtering, and personalized recommendation ranking.
+
+<Note>
+This endpoint requires authentication and completed career onboarding.
+</Note>
+
+## Authentication
+
+Requires a valid Supabase authentication token in the request headers.
+
+```bash
+Authorization: Bearer <supabase_access_token>
+```
+
+## Rate Limiting
+
+- **Limit:** 30 requests per minute per user
+- **Window:** Sliding window (1 minute)
+- **Response:** HTTP 429 if rate limit exceeded
+
+## Request
+
+### HTTP Method
+
+```
+POST /api/events/filtered
+```
+
+### Headers
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+<ParamField header="X-Request-Id" type="string">
+  Optional request ID for tracing
+</ParamField>
+
+<ParamField header="X-Request-Timestamp" type="string">
+  Optional ISO timestamp for request timing analytics
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="searchTerm" type="string">
+  Full-text search across event titles, descriptions, tags, and organizers. Supports semantic expansion for broader matches.
+  
+  Example: `"machine learning"`
+</ParamField>
+
+<ParamField body="categories" type="string[]">
+  Filter by event category IDs (e.g., conference, workshop, hackathon)
+  
+  Example: `["conf-001", "workshop-002"]`
+</ParamField>
+
+<ParamField body="tags" type="string[]">
+  Filter by exact tag matches (case-insensitive). Uses AND logic with other filters.
+  
+  Example: `["AI", "Python", "Data Science"]`
+</ParamField>
+
+<ParamField body="locations" type="string[]">
+  Filter by event locations (normalized, case-insensitive)
+  
+  Example: `["san francisco", "new york"]`
+</ParamField>
+
+<ParamField body="format" type="string" default="all">
+  Filter by event format
+  
+  Options: `all`, `virtual`, `in-person`, `hybrid`
+</ParamField>
+
+<ParamField body="budget" type="string" default="all">
+  Filter by price range
+  
+  Options: `all`, `free-only`, `low`, `moderate`, `high`, `unlimited`
+</ParamField>
+
+<ParamField body="cost" type="string" default="all">
+  Simple cost filter
+  
+  Options: `all`, `free`, `paid`
+</ParamField>
+
+<ParamField body="difficulty" type="string" default="all">
+  Filter by difficulty level
+  
+  Options: `all`, `beginner`, `intermediate`, `advanced`
+</ParamField>
+
+<ParamField body="dateRange" type="object">
+  Filter events by date range
+  
+  <Expandable title="dateRange properties">
+    <ParamField body="start" type="string">
+      ISO 8601 date string (e.g., `"2026-03-01T00:00:00Z"`)
+    </ParamField>
+    <ParamField body="end" type="string">
+      ISO 8601 date string (e.g., `"2026-06-30T23:59:59Z"`)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="sortBy" type="string" default="date">
+  Sort field
+  
+  Options: `default`, `date`, `popularity`, `career-impact`, `title`, `location`
+</ParamField>
+
+<ParamField body="sortDirection" type="string" default="asc">
+  Sort order (auto-set to `desc` for `career-impact`)
+  
+  Options: `asc`, `desc`
+</ParamField>
+
+<ParamField body="page" type="number" default="1">
+  Page number (1-indexed)
+</ParamField>
+
+<ParamField body="pageSize" type="number" default="50">
+  Results per page (max 100)
+</ParamField>
+
+<ParamField body="recommended" type="boolean" default="false">
+  Filter to only recommended events (score ≥ 70)
+</ParamField>
+
+<ParamField body="sessionId" type="string">
+  Session ID for telemetry tracking
+</ParamField>
+
+<ParamField body="surface" type="string">
+  UI surface context for analytics
+  
+  Options: `calendar`, `discover`, `default`
+</ParamField>
+
+<ParamField body="fastSearch" type="boolean" default="false">
+  Skip enrichment and counts for instant search (typing-as-you-search)
+</ParamField>
+
+## Response
+
+### Success Response (200)
+
+<ResponseField name="success" type="boolean" required>
+  Always `true` for successful requests
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  <Expandable title="data properties">
+    <ResponseField name="events" type="Event[]" required>
+      Array of events with career impact scores and metadata
+      
+      <Expandable title="Event schema">
+        <ResponseField name="id" type="string" required>
+          Event UUID
+        </ResponseField>
+        
+        <ResponseField name="title" type="string" required>
+          Event title
+        </ResponseField>
+        
+        <ResponseField name="description" type="string">
+          Event description (Markdown supported)
+        </ResponseField>
+        
+        <ResponseField name="startTime" type="string" required>
+          ISO 8601 timestamp
+        </ResponseField>
+        
+        <ResponseField name="endTime" type="string">
+          ISO 8601 timestamp
+        </ResponseField>
+        
+        <ResponseField name="location" type="string">
+          Event location or "Virtual"
+        </ResponseField>
+        
+        <ResponseField name="format" type="string">
+          `virtual`, `in-person`, or `hybrid`
+        </ResponseField>
+        
+        <ResponseField name="careerImpact" type="object">
+          Career alignment scores (if enrichment enabled)
+          
+          <Expandable title="careerImpact schema">
+            <ResponseField name="overall" type="number">
+              Overall career alignment score (0-100)
+            </ResponseField>
+            
+            <ResponseField name="confidence" type="number">
+              Confidence level (0-1)
+            </ResponseField>
+            
+            <ResponseField name="components" type="object">
+              Score breakdown by component
+            </ResponseField>
+            
+            <ResponseField name="explanation" type="object">
+              Human-readable explanations and matched skills
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="pagination" type="object" required>
+      <ResponseField name="page" type="number">
+        Current page
+      </ResponseField>
+      <ResponseField name="pageSize" type="number">
+        Results per page
+      </ResponseField>
+      <ResponseField name="total" type="number">
+        Total matching events
+      </ResponseField>
+      <ResponseField name="hasMore" type="boolean">
+        Whether more pages exist
+      </ResponseField>
+    </ResponseField>
+    
+    <ResponseField name="filters" type="object" required>
+      Applied and available filter options
+    </ResponseField>
+    
+    <ResponseField name="stats" type="object" required>
+      <ResponseField name="processingTimeMs" type="number">
+        Server processing time
+      </ResponseField>
+      <ResponseField name="filteredCount" type="number">
+        Events returned in current page
+      </ResponseField>
+      <ResponseField name="totalCount" type="number">
+        Total matching events
+      </ResponseField>
+    </ResponseField>
+    
+    <ResponseField name="isColdStart" type="boolean">
+      Whether user lacks a career profile
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Error Responses
+
+<CodeGroup>
+```json 401 Unauthorized
+{
+  "success": false,
+  "error": "Authentication required"
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "error": "Invalid pagination parameters"
+}
+```
+
+```json 429 Rate Limited
+{
+  "success": false,
+  "error": "Too many requests. Please try again later."
+}
+```
+
+```json 500 Server Error
+{
+  "success": false,
+  "error": "Failed to fetch events"
+}
+```
+</CodeGroup>
+
+## Examples
+
+### Basic Search
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://kurecal.app/api/events/filtered \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "searchTerm": "AI conference",
+    "page": 1,
+    "pageSize": 20
+  }'
+```
+
+```typescript TypeScript
+const response = await fetch('/api/events/filtered', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    searchTerm: 'AI conference',
+    page: 1,
+    pageSize: 20
+  })
+});
+
+const { data } = await response.json();
+console.log(`Found ${data.pagination.total} events`);
+```
+</CodeGroup>
+
+### Advanced Filtering
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://kurecal.app/api/events/filtered \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "tags": ["Python", "Machine Learning"],
+    "format": "virtual",
+    "cost": "free",
+    "dateRange": {
+      "start": "2026-03-01T00:00:00Z",
+      "end": "2026-06-30T23:59:59Z"
+    },
+    "sortBy": "career-impact",
+    "recommended": true
+  }'
+```
+
+```typescript TypeScript
+const filters = {
+  tags: ['Python', 'Machine Learning'],
+  format: 'virtual',
+  cost: 'free',
+  dateRange: {
+    start: '2026-03-01T00:00:00Z',
+    end: '2026-06-30T23:59:59Z'
+  },
+  sortBy: 'career-impact',
+  recommended: true
+};
+
+const response = await fetch('/api/events/filtered', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify(filters)
+});
+```
+</CodeGroup>
+
+## Performance Notes
+
+### Caching Strategy
+
+- **Cache TTL:** 2-5 minutes depending on query complexity
+- **Cache Key:** SHA-1 hash of normalized filters + user ID
+- **Cache Headers:** `X-Cache: HIT/MISS` indicates cache status
+
+### Query Optimization
+
+- **Search Expansion:** Terms < 3 chars use FTS only; longer queries expand with semantic matches
+- **Tag Search:** Disabled for common single-word terms (e.g., "data", "ai")
+- **Organizer Search:** Only enabled for queries > 10 characters
+- **Parallel Execution:** Tag, organizer, and FTS searches run concurrently
+
+### Enrichment Strategy
+
+- **Fast Search Mode:** Set `fastSearch: true` to skip career scoring and counts
+- **Enrichment Window:** First 5 pages enriched by default; configurable via `ENRICH_MAX_PAGE`
+- **Cold Start:** Users without profiles receive baseline quality scores
+
+<Warning>
+Career-impact sorting fetches a larger result window (5x page size) to ensure accurate pagination after scoring.
+</Warning>
+
+## Related Endpoints
+
+- [GET /api/events/recommendations](/api/events/recommendations) - Personalized event recommendations
+- [POST /api/events/tracked](/api/events/tracked) - Track event interactions
+- [GET /api/profile/career](/api/profile/career) - Manage career profile for better scoring

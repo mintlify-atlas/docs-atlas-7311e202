@@ -1,0 +1,457 @@
+---
+title: "Event Discovery Workspace"
+description: "Master TechCal's intelligent event discovery tools—filtering, search, detail views, and personalized recommendations"
+---
+
+## Overview
+
+The **Discover** page is your command center for finding tech events. It combines intelligent filtering, personalized recommendations, and responsive layouts to help you quickly find events that match your career goals.
+
+![Discovery Workspace](/images/discovery-workspace.png)
+
+## Workspace Layout
+
+### Desktop View
+
+The desktop experience uses a **three-panel layout**:
+
+1. **Left Sidebar**: Advanced filters and event categories
+2. **Center Panel**: Event cards grid with search and quick filters
+3. **Right Drawer**: Event details slide out when you click an event card
+
+### Mobile View
+
+On mobile, the layout adapts to a **single-column stack**:
+- Collapsible filter drawer accessible via top-left button
+- Scrollable event cards
+- Full-screen event detail view when tapping a card
+
+## Search & Quick Filters
+
+### Search Bar
+
+The search bar at the top searches across:
+- Event titles
+- Event descriptions
+- Speaker names
+- Organizer names
+- Location names
+- Tags and categories
+
+<Tip>
+  Search is debounced (waits 100ms after you stop typing) to avoid excessive API calls. Results update automatically as you type.
+</Tip>
+
+**Example searches:**
+- `React conference` - Finds React-focused events
+- `San Francisco` - Events in SF
+- `machine learning` - ML/AI events
+- `beginner workshop` - Entry-level workshops
+
+### Quick Filter Buttons
+
+Click any quick filter for instant results:
+
+<CardGroup cols={2}>
+  <Card title="This Week" icon="calendar-week">
+    Events starting in the next 7 days
+  </Card>
+  <Card title="Free Events" icon="dollar-sign">
+    Zero-cost events only
+  </Card>
+  <Card title="Virtual Only" icon="video">
+    Online events you can attend from anywhere
+  </Card>
+  <Card title="Near Me" icon="location-dot">
+    Detects your location and filters to nearby cities
+  </Card>
+  <Card title="My Level" icon="stairs">
+    Events matching your seniority (from your profile)
+  </Card>
+  <Card title="No Conflicts" icon="calendar-xmark">
+    Events that don't overlap with your existing calendar
+  </Card>
+</CardGroup>
+
+<Note>
+  **Near Me** uses browser geolocation (requires permission) or your profile location as a fallback.
+</Note>
+
+## Advanced Filters
+
+The left sidebar (desktop) or filter drawer (mobile) offers granular control:
+
+### Category Filters
+
+Filter by event type:
+- **Conferences**: Multi-day industry events with keynotes and tracks
+- **Hackathons**: Competitive coding events with team formation
+- **Meetups**: Local community gatherings (usually 2-3 hours)
+- **Workshops**: Hands-on skill-building sessions
+- **Career Fairs**: Job expo and hiring events
+- **Networking Events**: Professional mixers and socials
+
+<Tip>
+  Select multiple categories to see combined results. For example, check both "Conferences" and "Workshops" to see learning-focused events.
+</Tip>
+
+### Date Range Filter
+
+Set custom date ranges:
+- Click the calendar icon to open the date picker
+- Select **start date** and **end date**
+- Or use presets: This Week, This Month, Next 3 Months
+
+### Location Filters
+
+Filter by specific cities or countries:
+1. Type a location in the search box
+2. Select from autocomplete suggestions
+3. Add multiple locations (OR logic—shows events in ANY selected location)
+
+**Virtual events** are included in all location filters unless you select "In-person only" format.
+
+### Format Filter
+
+Choose how you want to attend:
+- **All**: Virtual, in-person, and hybrid events
+- **Virtual**: Online-only events
+- **In-person**: Physical location events
+- **Hybrid**: Events with both virtual and in-person options
+
+### Cost Filter
+
+- **All**: Free and paid events
+- **Free**: Zero-cost events only
+- **Paid**: Events requiring payment (any amount)
+
+<Note>
+  The **Budget** filter (see below) offers more granular control than the simple Free/Paid toggle.
+</Note>
+
+### Budget Filter
+
+Filter by price tiers:
+- **Free Only**: $0 events
+- **Low** ($1-$100): Affordable workshops and meetups
+- **Moderate** ($100-$500): Standard conference tickets
+- **High** ($500-$2000): Premium conferences and training
+- **Unlimited**: Show all events regardless of price
+
+<Tip>
+  Set your default budget preference in **Settings** → **Career Profile** so it's pre-selected when you visit Discover.
+</Tip>
+
+### Difficulty Filter
+
+Match events to your skill level:
+- **Beginner**: Intro workshops, 101 sessions
+- **Intermediate**: Standard professional events
+- **Advanced**: Expert-level talks, deep dives
+
+### Availability Filter
+
+- **All**: Show all events
+- **Available**: Events that don't conflict with your calendar
+- **No Conflicts**: Only events with zero overlap
+
+<Warning>
+  Availability filtering requires calendar sync to be enabled. Go to **Settings** → **Connect Calendar** to set this up.
+</Warning>
+
+### Popularity Filter
+
+- **All**: All events regardless of popularity
+- **Trending**: Events with high recent engagement
+- **High Attendance**: Large-scale events (500+ attendees)
+- **Niche**: Smaller, specialized events
+
+### Duration Filter
+
+- **Short**: 1-3 hours (meetups, workshops)
+- **Medium**: Half-day to full-day (1-8 hours)
+- **Long**: Multi-day events (2-7 days)
+- **Multi-day**: Week-long conferences or bootcamps
+
+### Personal Filters
+
+Filter by your relationship to events:
+- **My Tracked**: Events you've saved to your calendar
+- **My Network**: Events where people you follow are attending
+- **Recommended**: Events with high Career Impact Scores for you
+
+<Tip>
+  Enable **Recommended** to see only events scored 70+ on Career Impact. Great for focused browsing.
+</Tip>
+
+## Sorting Options
+
+Control the order of results:
+
+- **Career Impact** (default for profile users): Highest career relevance first
+- **Date**: Soonest events first
+- **Popularity**: Most-attended events first
+- **Title**: Alphabetical order
+- **Location**: Grouped by city/country
+
+You can toggle **ascending** or **descending** order for each sort type.
+
+<Note>
+  If you haven't completed your career profile, sorting defaults to **Popularity** instead of Career Impact.
+</Note>
+
+## Event Cards
+
+Each event card displays:
+
+### Card Header
+- **Event title**: Bold, large text
+- **Organizer logo**: If available
+- **Date badge**: Start date in readable format (e.g., "Mar 15, 2026")
+
+### Card Body
+- **Location**: City and country, or "Virtual"
+- **Format badge**: Virtual, In-person, or Hybrid
+- **Cost indicator**: Free, Paid, or specific price
+- **Career Impact Score**: 0-100 score with color coding:
+  - **80-100**: High impact (green)
+  - **50-79**: Moderate impact (yellow)
+  - **0-49**: Low impact (gray)
+
+### Card Footer
+- **Quick actions**: Save, Share, Register buttons
+- **Network badge**: "3 in your network" if followers are attending
+
+<Tip>
+  Hover over the Career Impact Score to see a tooltip with the top 3 reasons why this event is relevant to you.
+</Tip>
+
+## Event Detail Drawer
+
+Click any event card to open the detail view:
+
+### Tabs
+
+1. **Overview**: Event description, agenda, speakers
+2. **Career Impact**: Detailed breakdown of why this event matters for YOUR career
+3. **Who's Going**: List of TechCal users attending (respects privacy settings)
+
+### Overview Tab
+
+- **Event description**: Full markdown-formatted details
+- **Date & time**: Start and end times in your timezone
+- **Location**: Venue address with map link (for in-person events)
+- **Registration link**: Direct link to sign up
+- **Speakers**: Name, bio, and photo for each speaker
+- **Agenda**: Session schedule with descriptions
+- **Tags**: Relevant topics and technologies
+
+### Career Impact Tab
+
+This tab shows **why TechCal recommends this event**:
+
+#### Overall Score
+A 0-100 score with color-coded badge:
+- **High (80-100)**: Strong career fit
+- **Moderate (50-79)**: Good match
+- **Low (0-49)**: Less relevant
+
+#### Score Breakdown
+
+Five components contribute to the overall score:
+
+<AccordionGroup>
+  <Accordion title="Skill Relevance (0-100)">
+    How well the event matches:
+    - Your **current skills** (reinforcement)
+    - Your **skills to learn** (growth opportunities)
+
+    **Example**: If you want to learn React and the event is a React workshop, this score will be 90+.
+  </Accordion>
+
+  <Accordion title="Career Stage Match (0-100)">
+    Whether the event difficulty matches your seniority:
+    - Junior → Beginner/Intermediate events
+    - Mid-level → Intermediate events
+    - Senior/Lead → Advanced/Expert events
+
+    **Example**: A senior engineer attending a "Intro to Python" workshop would score low here.
+  </Accordion>
+
+  <Accordion title="Networking Value (0-100)">
+    Opportunities to meet:
+    - Peers in your field
+    - Potential mentors
+    - Hiring managers (for career fairs)
+
+    **Example**: Large conferences with dedicated networking sessions score higher than webinars.
+  </Accordion>
+
+  <Accordion title="Industry Relevance (0-100)">
+    Alignment with your target industry:
+    - If you work in FinTech, FinTech conferences score high
+    - General tech events score moderately
+    - Unrelated industries score low
+  </Accordion>
+
+  <Accordion title="Timing Bonus (0-10)">
+    Small boost for urgency:
+    - Events happening soon (within 2 weeks)
+    - Registration deadlines approaching
+  </Accordion>
+</AccordionGroup>
+
+#### Matched Skills
+
+A list of skills from your profile that appear in this event:
+- **Primary skills**: Things you already know
+- **Skills to learn**: Things you want to learn
+
+**Example**:
+> ✅ **Python** (Primary Skill)
+> ✅ **Machine Learning** (Skill to Learn)
+> ✅ **AWS** (Primary Skill)
+
+#### Matched Goals
+
+Career goals from your profile that this event supports:
+- "Learn new technologies"
+- "Advance to senior roles"
+- "Build your network"
+
+#### Confidence Factors
+
+Notes about the recommendation quality:
+- "High confidence - profile is complete"
+- "Cold start scoring - complete your profile for better recommendations"
+- "Behavioral boost applied" (if you've attended similar events before)
+
+### Who's Going Tab
+
+See other TechCal users attending:
+
+- **Total attending**: Count of all users who saved this event
+- **Visible attendees**: Users with public profiles and attendance sharing enabled
+- **Network attending**: Number of people you follow who are attending
+
+<Note>
+  You'll only see users who have:
+  1. Set their profile visibility to "Public"
+  2. Enabled "Show Attendance" in settings
+  3. Not blocked you
+</Note>
+
+Each attendee card shows:
+- Avatar and name
+- Username (`@username`)
+- Headline (bio)
+- Relationship badge ("Mutual follow", "You follow", "Follows you")
+- Follow button
+
+<Tip>
+  Use the **Who's Going** section to plan meetups at conferences or find potential hackathon teammates.
+</Tip>
+
+## Loading States & Performance
+
+TechCal uses several optimizations for fast, responsive filtering:
+
+### Skeleton Loaders
+While events are loading, you'll see placeholder cards with animated shimmer effects.
+
+### Debounced Search
+Search queries wait 100ms after you stop typing before fetching results. This prevents excessive API calls.
+
+### Pagination
+Events load 50 at a time. Scroll to the bottom to load more automatically.
+
+### Background Refetching
+When you change filters, existing events stay visible (slightly dimmed) while new results load. This prevents jarring empty states.
+
+### Cache
+Recent filter results are cached for 5 minutes. Navigating back to previous filters is instant.
+
+## Keyboard Shortcuts
+
+<Note>
+  **Desktop only** - Keyboard shortcuts are not available on mobile.
+</Note>
+
+- **`/`**: Focus search bar
+- **`Esc`**: Close event detail drawer
+- **`f`**: Open filter sidebar
+- **`1-9`**: Select quick filter buttons
+- **`Arrow Up/Down`**: Navigate between event cards
+- **`Enter`**: Open selected event detail
+
+## Tips & Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start Broad, Then Narrow">
+    Begin with no filters to see all personalized recommendations, then add filters to refine. This helps you discover unexpected opportunities.
+  </Accordion>
+
+  <Accordion title="Use Career Impact + Budget Together">
+    Set **Recommended** filter (high impact events only) + your budget tier to find the best ROI events for your career.
+  </Accordion>
+
+  <Accordion title="Save Filters as Bookmarks">
+    After applying filters, bookmark the URL. Filter state is saved in the URL, so you can return to the same view later.
+  </Accordion>
+
+  <Accordion title="Check 'My Network' Weekly">
+    Enable the **My Network** filter to see events where your followed users are attending. Great for planned meetups.
+  </Accordion>
+
+  <Accordion title="Combine Virtual + This Month for Quick Wins">
+    Set **Virtual** format + **This Month** date range + **Free** cost to find immediate, accessible learning opportunities.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="No events found">
+    **Possible causes**:
+    - Filters are too restrictive (try removing some)
+    - No events match your criteria in the database
+    - Region filter is too narrow
+
+    **Solution**: Click **Reset Filters** to start fresh.
+  </Accordion>
+
+  <Accordion title="Career Impact Scores are all low">
+    **Cause**: Your career profile may not be complete or detailed enough.
+
+    **Solution**: Go to **Settings** → **Career Profile** and add more:
+    - Skills (primary and learning)
+    - Career goals
+    - Interests
+    - Industry preferences
+  </Accordion>
+
+  <Accordion title="'Near Me' not working">
+    **Cause**: Browser geolocation is blocked or location is not set in profile.
+
+    **Solution**:
+    1. Check browser permissions for location access
+    2. Or set your location in **Settings** → **Profile** → **Location**
+  </Accordion>
+
+  <Accordion title="Events show wrong timezone">
+    **Cause**: Timezone is not set or incorrect.
+
+    **Solution**: Go to **Settings** → **Profile** → **Timezone** and select your current timezone.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Calendar Integration" icon="calendar" href="/features/calendar">
+    Learn how to sync tracked events to Google Calendar or Outlook
+  </Card>
+  <Card title="Dashboard Analytics" icon="chart-line" href="/features/dashboard">
+    Track your event attendance and career progress
+  </Card>
+</CardGroup>

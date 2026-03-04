@@ -1,0 +1,474 @@
+---
+title: "POST /api/admin/ingestion/run"
+description: "Trigger event ingestion pipeline for RSS, API, ICS, and HTML sources"
+---
+
+## Overview
+
+The ingestion API triggers TechCal's automated event collection pipeline. It fetches events from configured sources (RSS feeds, APIs, ICS calendars, HTML scrapers), normalizes data, and queues events for moderation.
+
+<Warning>
+**Admin-only endpoint.** Requires `is_admin=true` in user profile.
+</Warning>
+
+## Authentication
+
+Requires both:
+1. Valid Supabase authentication token
+2. Admin user privileges (`profiles.is_admin = true`)
+
+```bash
+Authorization: Bearer <supabase_access_token>
+```
+
+## Request
+
+### HTTP Method
+
+```
+POST /api/admin/ingestion/run
+```
+
+### Headers
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="sourceId" type="string">
+  UUID of specific ingestion source to run. If omitted, runs all active sources.
+</ParamField>
+
+<ParamField body="limit" type="number" default="100">
+  Maximum number of events to normalize after ingestion
+</ParamField>
+
+## Response
+
+### Success Response (200)
+
+<ResponseField name="success" type="boolean" required>
+  Always `true` for successful ingestion runs
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  Human-readable status message
+</ResponseField>
+
+<ResponseField name="summary" type="object" required>
+  <Expandable title="summary properties">
+    <ResponseField name="ingestion" type="object" required>
+      Ingestion pipeline results
+      
+      <ResponseField name="totalSources" type="number">
+        Number of sources processed
+      </ResponseField>
+      
+      <ResponseField name="successful" type="number">
+        Sources that completed successfully
+      </ResponseField>
+      
+      <ResponseField name="failed" type="number">
+        Sources that failed
+      </ResponseField>
+      
+      <ResponseField name="totalEventsFetched" type="number">
+        Raw events fetched from sources
+      </ResponseField>
+      
+      <ResponseField name="totalRecordsQueued" type="number">
+        Events queued for normalization
+      </ResponseField>
+      
+      <ResponseField name="totalErrors" type="number">
+        Total errors across all sources
+      </ResponseField>
+    </ResponseField>
+    
+    <ResponseField name="normalization" type="object" required>
+      Normalization pipeline results
+      
+      <ResponseField name="processed" type="number">
+        Events processed by normalizer
+      </ResponseField>
+      
+      <ResponseField name="succeeded" type="number">
+        Events successfully normalized
+      </ResponseField>
+      
+      <ResponseField name="failed" type="number">
+        Events that failed normalization
+      </ResponseField>
+      
+      <ResponseField name="errors" type="string[]">
+        Error messages from normalization
+      </ResponseField>
+    </ResponseField>
+    
+    <ResponseField name="results" type="object[]" required>
+      Per-source detailed results
+      
+      <ResponseField name="sourceId" type="string">
+        Source UUID
+      </ResponseField>
+      
+      <ResponseField name="sourceName" type="string">
+        Human-readable source name
+      </ResponseField>
+      
+      <ResponseField name="success" type="boolean">
+        Whether this source completed successfully
+      </ResponseField>
+      
+      <ResponseField name="eventsFetched" type="number">
+        Raw events fetched
+      </ResponseField>
+      
+      <ResponseField name="recordsQueued" type="number">
+        Events queued for processing
+      </ResponseField>
+      
+      <ResponseField name="errors" type="number">
+        Error count for this source
+      </ResponseField>
+      
+      <ResponseField name="errorMessages" type="string[]">
+        Specific error messages
+      </ResponseField>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="timestamp" type="string" required>
+  ISO 8601 timestamp of ingestion completion
+</ResponseField>
+
+### Error Responses
+
+<CodeGroup>
+```json 401 Unauthorized
+{
+  "error": "Unauthorized"
+}
+```
+
+```json 403 Forbidden
+{
+  "error": "Admin access required"
+}
+```
+
+```json 500 Server Error
+{
+  "success": false,
+  "error": "Ingestion orchestrator failed",
+  "timestamp": "2026-03-04T10:30:00Z"
+}
+```
+</CodeGroup>
+
+## Examples
+
+### Run All Sources
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://kurecal.app/api/admin/ingestion/run \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{}'
+```
+
+```typescript TypeScript
+const response = await fetch('/api/admin/ingestion/run', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${adminToken}`
+  },
+  body: JSON.stringify({})
+});
+
+const result = await response.json();
+console.log(`Fetched ${result.summary.ingestion.totalEventsFetched} events`);
+console.log(`Normalized ${result.summary.normalization.succeeded} events`);
+```
+</CodeGroup>
+
+### Run Specific Source
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://kurecal.app/api/admin/ingestion/run \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{
+    "sourceId": "550e8400-e29b-41d4-a716-446655440000",
+    "limit": 50
+  }'
+```
+
+```typescript TypeScript
+await fetch('/api/admin/ingestion/run', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${adminToken}`
+  },
+  body: JSON.stringify({
+    sourceId: '550e8400-e29b-41d4-a716-446655440000',
+    limit: 50
+  })
+});
+```
+</CodeGroup>
+
+## Ingestion Pipeline
+
+### Pipeline Stages
+
+1. **Source Selection**
+   - If `sourceId` provided: Fetch single source
+   - Otherwise: Fetch all sources where `is_active=true`
+
+2. **Interval Check**
+   - Skip sources fetched within their `fetch_interval_minutes`
+   - Manual triggers bypass this check (force fetch)
+
+3. **Data Collection**
+   - RSS: Parse XML feed
+   - API: Call REST endpoint
+   - ICS: Parse iCalendar file
+   - HTML: Scrape event listings
+
+4. **Deduplication**
+   - Check for existing events by URL
+   - Use fuzzy matching for title/date similarity
+   - Skip duplicates, queue new events
+
+5. **Normalization**
+   - Parse dates to ISO 8601
+   - Extract location and format
+   - Normalize tags and categories
+   - Calculate quality score
+
+6. **Quality Control**
+   - **Auto-publish:** Score ≥ 75% → Publish immediately
+   - **Moderation queue:** Score < 75% → Requires review
+   - **Auto-reject:** Score < 50% → Flag for manual review
+
+### Quality Scoring
+
+Events receive a quality score (0-100) based on:
+
+| Factor | Weight | Criteria |
+|--------|--------|----------|
+| **Title Quality** | 20% | Length, clarity, no spam patterns |
+| **Description Quality** | 20% | Length, formatting, detail level |
+| **Date Validity** | 15% | Valid dates, reasonable duration |
+| **Location Data** | 15% | Complete location or virtual indicator |
+| **Speaker Info** | 10% | Speaker names and URLs present |
+| **Organizer Info** | 10% | Reputable organizer |
+| **Image Quality** | 5% | High-res image present |
+| **Tag Relevance** | 5% | Relevant tech tags |
+
+### Supported Source Types
+
+<Tabs>
+  <Tab title="RSS Feed">
+    **Configuration:**
+    ```json
+    {
+      "type": "rss",
+      "url": "https://example.com/events.rss",
+      "fetch_interval_minutes": 60
+    }
+    ```
+    
+    **Extraction:**
+    - Title: `<title>`
+    - Description: `<description>`
+    - URL: `<link>`
+    - Date: `<pubDate>` or `<dc:date>`
+  </Tab>
+  
+  <Tab title="API">
+    **Configuration:**
+    ```json
+    {
+      "type": "api",
+      "url": "https://api.example.com/events",
+      "method": "GET",
+      "headers": { "Authorization": "Bearer ..." },
+      "fetch_interval_minutes": 120
+    }
+    ```
+    
+    **Extraction:**
+    - Parse JSON response
+    - Map fields via configuration
+  </Tab>
+  
+  <Tab title="ICS Calendar">
+    **Configuration:**
+    ```json
+    {
+      "type": "ics",
+      "url": "https://example.com/events.ics",
+      "fetch_interval_minutes": 360
+    }
+    ```
+    
+    **Extraction:**
+    - SUMMARY → title
+    - DESCRIPTION → description
+    - DTSTART → start_time
+    - DTEND → end_time
+    - LOCATION → location
+  </Tab>
+  
+  <Tab title="HTML Scraper">
+    **Configuration:**
+    ```json
+    {
+      "type": "html",
+      "url": "https://example.com/events",
+      "selectors": {
+        "container": ".event-card",
+        "title": "h3.title",
+        "date": ".date",
+        "url": "a.link"
+      },
+      "fetch_interval_minutes": 1440
+    }
+    ```
+    
+    **Extraction:**
+    - Use CSS selectors
+    - Parse structured data
+  </Tab>
+</Tabs>
+
+## Cron Setup
+
+### Vercel Cron Configuration
+
+Configured in `vercel.json`:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/admin/ingestion/cron",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
+```
+
+### Cron Authentication
+
+The cron endpoint requires a secret header:
+
+```bash
+Authorization: Bearer <CRON_SECRET>
+```
+
+Generate secret:
+
+```bash
+openssl rand -hex 32
+```
+
+Set in environment:
+
+```bash
+CRON_SECRET=your_generated_secret
+```
+
+### Manual vs Cron Execution
+
+| Aspect | Manual (`/run`) | Cron (`/cron`) |
+|--------|----------------|----------------|
+| Auth | Admin user token | CRON_SECRET header |
+| Interval check | Bypassed (force) | Enforced |
+| Error handling | Returns 500 | Logs to Sentry |
+| Timeout | 5 minutes | 60 seconds |
+
+## Moderation Workflow
+
+### Moderation Queue
+
+Events requiring review:
+
+```sql
+SELECT * FROM ingestion_queue
+WHERE status = 'pending'
+  AND quality_score < 75
+ORDER BY quality_score DESC, created_at DESC;
+```
+
+### Admin Dashboard
+
+Manage queued events at `/admin/ingestion/moderation`:
+
+- **Approve:** Publish event immediately
+- **Reject:** Mark as spam/duplicate
+- **Edit & Approve:** Fix issues then publish
+- **Bulk Actions:** Approve/reject multiple events
+
+### Auto-Moderation Rules
+
+Certain events are auto-moderated:
+
+```typescript
+if (event.quality_score >= 75 && event.organizer_reputation === 'verified') {
+  await publishEvent(event);
+} else if (event.quality_score < 50) {
+  await rejectEvent(event, 'Low quality score');
+} else {
+  await queueForModeration(event);
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**"Service role credentials not configured"**
+- Set `SUPABASE_SERVICE_ROLE_KEY` environment variable
+- Restart application after setting
+
+**"Admin access required"**
+- Run: `UPDATE profiles SET is_admin = TRUE WHERE id = '<your_user_id>'`
+- Get user ID from Supabase Dashboard → Authentication → Users
+
+**"Source fetch interval not elapsed"**
+- Manual triggers bypass this automatically
+- Reduce `fetch_interval_minutes` in source config
+
+**"Normalization failed: Invalid date format"**
+- Check source date format matches expected pattern
+- Add custom date parser in normalization config
+
+### Debug Mode
+
+Enable detailed logging:
+
+```bash
+NEXT_PUBLIC_LOG_LEVEL=debug
+```
+
+Logs include:
+- Source fetch URLs and responses
+- Deduplication match details
+- Normalization field mappings
+- Quality score calculations
+
+## Related Documentation
+
+- [Event Ingestion Setup Guide](/docs/INGESTION_SETUP.md) - Full setup instructions
+- [Admin Dashboard](/admin/ingestion) - Web UI for managing ingestion
+- [Moderation Queue](/admin/ingestion/moderation) - Review pending events

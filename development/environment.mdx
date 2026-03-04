@@ -1,0 +1,375 @@
+---
+title: Environment Variables
+description: Complete reference for all TechCal environment variables, including required vs optional, feature flags, and external service configuration
+---
+
+TechCal uses environment variables for configuration. This page documents all available variables, their purposes, and example values.
+
+## Required Variables
+
+These variables are essential for TechCal to function:
+
+### Supabase Configuration
+
+```bash
+# Your Supabase project URL
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+
+# Public anonymous key (safe to expose in browser)
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Service role key (server-side only, NEVER expose publicly)
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+<Warning>
+  **Never commit `SUPABASE_SERVICE_ROLE_KEY` to version control.** This key has full database access and should only be used server-side. Keep it in `.env.local` (which is gitignored).
+</Warning>
+
+### Ingestion Cron Jobs
+
+```bash
+# Secret token for authenticating cron job requests
+# Generate with: openssl rand -hex 32
+CRON_SECRET=your_secure_random_string_here
+```
+
+<Note>
+  The `CRON_SECRET` is required for the automated event ingestion pipeline. Vercel cron jobs use this to authenticate requests to `/api/cron/ingestion` and `/api/cron/enrichment`.
+</Note>
+
+## Optional Variables
+
+### Scoring & Recommendations
+
+Control how events are scored and ranked:
+
+```bash
+# Scoring strategy: server (advanced), legacy (base), or shadow (both with telemetry)
+DISCOVERY_SCORING=server
+
+# Reranking strategy: off, advanced, or shadow
+DISCOVERY_RERANK=advanced
+
+# Enable behavioral boost (interaction-based scoring)
+NEXT_PUBLIC_ENABLE_BEHAVIORAL_BOOST=true
+
+# Boost strength multiplier (default: 1.0)
+NEXT_PUBLIC_BEHAVIORAL_BOOST_STRENGTH=1.0
+
+# Enable diversity enhancement in recommendations
+NEXT_PUBLIC_ENABLE_DIVERSITY_ENHANCEMENT=true
+
+# Type preference gate threshold (0.0-1.0, default: 0.75)
+NEXT_PUBLIC_TYPE_PREF_GATE=0.75
+
+# Disable type preference gating entirely
+NEXT_PUBLIC_DISABLE_TYPE_PREF_GATE=false
+```
+
+<CodeGroup>
+  ```bash Server Strategy (Recommended)
+  DISCOVERY_SCORING=server
+  DISCOVERY_RERANK=advanced
+  ```
+
+  ```bash Legacy Strategy
+  DISCOVERY_SCORING=legacy
+  DISCOVERY_RERANK=off
+  ```
+
+  ```bash Shadow Mode (A/B Testing)
+  DISCOVERY_SCORING=shadow
+  DISCOVERY_RERANK=shadow
+  ```
+</CodeGroup>
+
+### Feature Toggles
+
+```bash
+# Show score breakdown in UI (debug mode)
+NEXT_PUBLIC_ENABLE_SCORE_BREAKDOWN=false
+
+# Show budget filter hint in discovery
+NEXT_PUBLIC_SHOW_BUDGET_HINT=false
+
+# Enable monitoring API endpoints
+ENABLE_MONITORING_API=false
+
+# Log detailed scoring information to console
+NEXT_PUBLIC_LOG_SCORING=false
+```
+
+### Monitoring & Analytics
+
+#### Sentry Error Tracking
+
+```bash
+# Sentry DSN for error tracking (optional)
+NEXT_PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project-id
+
+# Sentry auth token for source maps (build-time only)
+SENTRY_AUTH_TOKEN=your_sentry_auth_token
+
+# Enable/disable Sentry
+SENTRY_ENABLED=true
+
+# Enable Sentry debug output
+SENTRY_DEBUG=false
+```
+
+<Note>
+  Sentry is automatically disabled in development mode to save memory. Set `SENTRY_ENABLED=true` to override.
+</Note>
+
+#### PostHog Analytics
+
+```bash
+# PostHog project key
+NEXT_PUBLIC_POSTHOG_KEY=phc_your_project_key
+
+# PostHog host (defaults to US region)
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+```
+
+### Bug Reporting (Linear Integration)
+
+```bash
+# Linear API key for creating issues from contact form
+LINEAR_API_KEY=lin_api_your_key
+
+# Linear team ID (UUID, key like 'KUR', or name)
+LINEAR_TEAM_ID=your_team_id
+```
+
+### Rate Limiting & Caching
+
+#### Upstash Redis
+
+```bash
+# Upstash Redis REST URL
+UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
+
+# Upstash Redis REST token
+UPSTASH_REDIS_REST_TOKEN=your_token
+```
+
+#### Vercel KV
+
+```bash
+# Vercel KV REST API URL
+KV_REST_API_URL=https://your-kv.kv.vercel-storage.com
+
+# Vercel KV REST API token
+KV_REST_API_TOKEN=your_token
+```
+
+<Note>
+  TechCal supports both Upstash Redis and Vercel KV for rate limiting and caching. At least one should be configured for production deployments.
+</Note>
+
+### Authentication & Redirects
+
+```bash
+# Site URL for OAuth callbacks (production)
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
+
+# Vercel deployment URL (auto-populated by Vercel)
+NEXT_PUBLIC_VERCEL_URL=your-project.vercel.app
+
+# Disable onboarding redirect (testing only)
+DISABLE_ONBOARDING_REDIRECT=false
+```
+
+### Google Calendar Integration
+
+```bash
+# Google OAuth client ID
+GOOGLE_OAUTH_CLIENT_ID=your_client_id.apps.googleusercontent.com
+
+# Google OAuth client secret
+GOOGLE_OAUTH_CLIENT_SECRET=your_client_secret
+
+# Token encryption key for secure storage
+TOKEN_ENCRYPTION_KEY=your_32_byte_hex_key
+```
+
+### Paddle Payments (Subscriptions)
+
+```bash
+# Paddle environment: 'sandbox' or 'production'
+NEXT_PUBLIC_PADDLE_ENVIRONMENT=sandbox
+
+# Paddle client token (sandbox)
+NEXT_PUBLIC_PADDLE_SANDBOX_CLIENT_TOKEN=test_xxx
+
+# Paddle client token (production)
+NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=live_xxx
+
+# Price IDs for subscription tiers
+NEXT_PUBLIC_PADDLE_PRICE_PRO_MONTHLY=pri_xxx
+NEXT_PUBLIC_PADDLE_PRICE_PRO_ANNUAL=pri_xxx
+NEXT_PUBLIC_PADDLE_PRICE_TEAM_MONTHLY=pri_xxx
+NEXT_PUBLIC_PADDLE_PRICE_TEAM_ANNUAL=pri_xxx
+```
+
+### Ingestion Pipeline
+
+```bash
+# Verify speaker URLs during ingestion (default: true)
+INGESTION_VERIFY_SPEAKERS=true
+
+# Playwright concurrency for web scraping (default: 2)
+LLM_ENRICHMENT_PLAYWRIGHT_CONCURRENCY=2
+```
+
+## Environment Variable Patterns
+
+### Public vs Server-Only
+
+<Tabs>
+  <Tab title="Public Variables">
+    Variables prefixed with `NEXT_PUBLIC_` are embedded in the browser bundle and are safe to expose:
+    
+    ```bash
+    NEXT_PUBLIC_SUPABASE_URL=...
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+    NEXT_PUBLIC_SENTRY_DSN=...
+    ```
+    
+    These are accessible in both server and client components.
+  </Tab>
+
+  <Tab title="Server-Only Variables">
+    Variables without `NEXT_PUBLIC_` are only available server-side:
+    
+    ```bash
+    SUPABASE_SERVICE_ROLE_KEY=...
+    CRON_SECRET=...
+    LINEAR_API_KEY=...
+    ```
+    
+    <Warning>
+      Never expose these in client code. They contain sensitive credentials.
+    </Warning>
+  </Tab>
+</Tabs>
+
+### Validation
+
+TechCal validates required environment variables at startup. Missing required variables will throw an error:
+
+```typescript
+// From src/utils/envConfig.ts
+const { isValid, missing } = envConfig.validate();
+
+if (!isValid) {
+  throw new Error(`Missing required variables: ${missing.join(', ')}`);
+}
+```
+
+## Example Configuration
+
+### Development (`.env.local`)
+
+```bash
+# Required
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+CRON_SECRET=generate_with_openssl_rand_hex_32
+
+# Scoring
+DISCOVERY_SCORING=server
+DISCOVERY_RERANK=advanced
+NEXT_PUBLIC_ENABLE_BEHAVIORAL_BOOST=true
+NEXT_PUBLIC_ENABLE_DIVERSITY_ENHANCEMENT=true
+
+# Debug
+NEXT_PUBLIC_LOG_SCORING=true
+NEXT_PUBLIC_SHOW_BUDGET_HINT=true
+SENTRY_ENABLED=false
+```
+
+### Production (Vercel Environment Variables)
+
+```bash
+# Required
+NEXT_PUBLIC_SUPABASE_URL=https://production.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+CRON_SECRET=...
+
+# Monitoring
+NEXT_PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project
+SENTRY_AUTH_TOKEN=...
+SENTRY_ENABLED=true
+
+# Analytics
+NEXT_PUBLIC_POSTHOG_KEY=phc_...
+
+# Rate Limiting
+KV_REST_API_URL=https://...
+KV_REST_API_TOKEN=...
+
+# Site URL
+NEXT_PUBLIC_SITE_URL=https://techcal.com
+```
+
+## Checking Configuration
+
+Use the environment config manager to inspect your setup:
+
+```typescript
+import { envConfig } from '@/utils/envConfig';
+
+// Get configuration summary
+const summary = envConfig.getSummary();
+console.log(summary);
+// {
+//   required: { present: 2, total: 2 },
+//   optional: { present: 5, total: 15 },
+//   features: {
+//     logScoring: true,
+//     behavioralBoost: true,
+//     ...
+//   }
+// }
+
+// Check if specific services are available
+if (envConfig.isKvAvailable()) {
+  console.log('Vercel KV is configured');
+}
+```
+
+## Security Best Practices
+
+<Steps>
+  <Step title="Never Commit Secrets">
+    Add `.env.local` to `.gitignore` (already configured in TechCal).
+  </Step>
+
+  <Step title="Use Different Keys Per Environment">
+    Production, staging, and development should have separate Supabase projects and credentials.
+  </Step>
+
+  <Step title="Rotate Secrets Regularly">
+    Regenerate `CRON_SECRET` and other tokens periodically.
+  </Step>
+
+  <Step title="Limit Service Role Key Usage">
+    Only use `SUPABASE_SERVICE_ROLE_KEY` in server-side code, never in client components.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Local Setup" icon="laptop-code" href="/development/setup">
+    Complete local development setup guide
+  </Card>
+  
+  <Card title="Deployment" icon="rocket" href="/development/deployment">
+    Deploy to Vercel with production configuration
+  </Card>
+</CardGroup>

@@ -1,0 +1,615 @@
+---
+title: "Hackathon Team Formation"
+description: "Create or join hackathon teams, find teammates with complementary skills, collaborate through built-in chat, and track participation analytics"
+---
+
+## Overview
+
+TechCal's **Hackathon Team Formation** system helps you:
+
+- **Create teams** for upcoming hackathons
+- **Join existing teams** looking for members
+- **Find compatible teammates** based on skills
+- **Collaborate in real-time** with team chat
+- **Track participation** and team analytics
+
+No more scrambling to find teammates in Discord servers or Slack channels—everything happens in TechCal.
+
+<Note>
+  Team formation is only available for hackathons listed on TechCal. Not all hackathons support this feature (depends on organizer integration).
+</Note>
+
+## Discovering Hackathons
+
+Hackathons appear in:
+
+- **Discover page**: Filter by category = "Hackathons"
+- **Calendar view**: Look for purple-colored event blocks
+- **Hackathons tab** (dedicated view coming soon)
+
+### Hackathon Detail Page
+
+Click any hackathon to view:
+
+- **Event details**: Dates, location/virtual, rules, prizes
+- **Teams tab**: Browse existing teams or create your own
+- **Register button**: Official hackathon registration link
+
+<Tip>
+  Register for the hackathon on their official site FIRST, then create/join a team in TechCal.
+</Tip>
+
+## Creating a Team
+
+<Steps>
+  <Step title="Navigate to Hackathon Page">
+    Find the hackathon you want to participate in and open its detail page.
+  </Step>
+
+  <Step title="Go to Teams Tab">
+    Click the **Teams** tab to see existing teams and the **Create Team** button.
+  </Step>
+
+  <Step title="Click Create Team">
+    Fill out the team creation form:
+
+    **Required fields**:
+    - **Team Name**: Unique name for your team (3-50 characters)
+
+    **Optional fields**:
+    - **Description**: What your team is working on or looking for (max 500 characters)
+    - **Looking for Members**: Toggle ON if you want others to join (default: ON)
+
+    <Warning>
+      Team names must be unique within each hackathon. If your desired name is taken, try variations or add your focus area (e.g., "Team Rocket - AI Project").
+    </Warning>
+  </Step>
+
+  <Step title="Save Team">
+    Click **Create Team**. You're automatically added as the team creator and first member.
+  </Step>
+
+  <Step title="Share with Others">
+    Copy the team link and share with potential teammates:
+
+    ```
+    https://techcal.com/hackathons/[id]/teams/[teamId]
+    ```
+
+    Or invite directly from the team page (if they're on TechCal).
+  </Step>
+</Steps>
+
+### Team Creator Privileges
+
+As the creator, you can:
+
+- Edit team name and description
+- Toggle "Looking for Members" status
+- Delete the team (only if no other members have joined)
+- Remove members (coming soon)
+
+<Note>
+  You can only create **one team per hackathon**. This prevents spam and ensures commitment.
+</Note>
+
+## Joining a Team
+
+<Steps>
+  <Step title="Browse Teams Tab">
+    On the hackathon page, go to the **Teams** tab to see all teams.
+
+    Teams are displayed with:
+    - Team name
+    - Description
+    - Member count (e.g., "3 / 5" if max size is 5)
+    - "Looking for members" badge
+    - Creator's name
+  </Step>
+
+  <Step title="View Team Details">
+    Click a team card to see:
+    - Full description
+    - List of current members
+    - Skills represented on the team
+    - Team chat preview
+  </Step>
+
+  <Step title="Click Join Team">
+    If the team is accepting members, click **Join Team**.
+
+    **Validation checks**:
+    - Team must have space (not full)
+    - You can't already be in another team for this hackathon
+    - Hackathon registration must still be open
+
+    <Warning>
+      You can only join **one team per hackathon**. Joining a new team automatically removes you from any previous team.
+    </Warning>
+  </Step>
+
+  <Step title="Start Collaborating">
+    Once joined, you gain access to:
+    - Team chat
+    - Member list
+    - Team coordination features
+  </Step>
+</Steps>
+
+### Leaving a Team
+
+To leave:
+
+1. Go to the team page
+2. Click **Leave Team** button
+3. Confirm in the dialog
+
+You'll be removed immediately and can join a different team.
+
+<Note>
+  Leaving a team does NOT unregister you from the hackathon. You're still participating, just without a team.
+</Note>
+
+## Team Capacity Validation
+
+### Max Team Size
+
+Each hackathon sets a **max team size** (typically 2-10 members):
+
+- **Small teams** (2-3): Focus, agility
+- **Medium teams** (4-5): Balanced roles
+- **Large teams** (6+): Complex projects
+
+TechCal enforces this limit—you can't join a full team.
+
+### Current Capacity Display
+
+Team cards show:
+
+> **3 / 5 members**
+
+This means 3 current members, 5 maximum. Still 2 spots available.
+
+<Tip>
+  Teams near capacity (e.g., 4/5) often close "Looking for members" to ensure space for specific skills they need.
+</Tip>
+
+## Finding Compatible Teammates
+
+### Skill-Based Matching (Basic)
+
+When you register for a hackathon, TechCal asks for your **skill proficiencies**:
+
+<Accordion title="Skill Proficiencies Form">
+  For each skill, select your level:
+
+  - **Beginner**: Just learning, can contribute with guidance
+  - **Intermediate**: Comfortable, can work independently
+  - **Advanced**: Expert, can mentor others
+  - **Expert**: Deep expertise, can architect solutions
+
+  **Example skills**:
+  - Frontend: React, Vue, Angular
+  - Backend: Node.js, Python, Django
+  - Mobile: iOS, Android, React Native
+  - AI/ML: TensorFlow, PyTorch
+  - Design: Figma, UI/UX
+</Accordion>
+
+### Compatible Participants (Coming Soon)
+
+TechCal will show you a **"Find Teammates"** section with:
+
+- Users with complementary skills
+- Skill compatibility score
+- Availability overlap
+- Preferred team roles
+
+**Example**:
+
+> 🤝 **Sarah Chen** - 85% Compatible
+>
+> **Skills**: React (Expert), UI/UX (Advanced)
+>
+> **Looking for**: Backend developer, AI/ML specialist
+>
+> [View Profile] [Invite to Team]
+
+<Note>
+  This feature requires completing your hackathon registration form with detailed skill proficiencies.
+</Note>
+
+## Team Chat
+
+### Real-Time Collaboration
+
+Every team has a **built-in chat**:
+
+- Real-time messaging
+- User mentions (@username)
+- Link previews
+- Message history (persists for duration of hackathon)
+
+### Accessing Team Chat
+
+1. Go to your team page
+2. Click the **Chat** tab
+3. Type messages in the input box at the bottom
+
+### Chat Features
+
+<CardGroup cols={2}>
+  <Card title="Real-Time Updates" icon="bolt">
+    Messages appear instantly for all team members using WebSocket connections.
+  </Card>
+  <Card title="User Presence" icon="circle">
+    See who's online with green status dots next to names.
+  </Card>
+  <Card title="Message History" icon="clock-rotate-left">
+    Scroll up to view past messages (last 100 messages loaded).
+  </Card>
+  <Card title="Link Previews" icon="link">
+    Paste URLs and see automatic previews (GitHub repos, design files, etc.).
+  </Card>
+</CardGroup>
+
+### Chat Best Practices
+
+<AccordionGroup>
+  <Accordion title="Coordinate Early">
+    As soon as your team forms, hop in chat and:
+    - Introduce yourselves
+    - Share timezones and availability
+    - Discuss project ideas
+    - Assign roles (frontend, backend, design, etc.)
+  </Accordion>
+
+  <Accordion title="Use External Tools for Code">
+    TechCal chat is for coordination, not code collaboration. Use:
+    - **GitHub**: Code repositories
+    - **Figma**: Design files
+    - **Google Docs**: Planning documents
+
+    Share links in chat.
+  </Accordion>
+
+  <Accordion title="Set Check-In Times">
+    Agree on regular check-ins (e.g., "Let's sync in chat at 9am PST daily") to keep everyone aligned.
+  </Accordion>
+
+  <Accordion title="Respect Timezones">
+    Hackathon teams often span multiple timezones. Use tools like [worldtimebuddy.com](https://www.worldtimebuddy.com) to find overlapping hours.
+  </Accordion>
+</AccordionGroup>
+
+## Hackathon Registration Data
+
+When you register for a hackathon in TechCal, you provide:
+
+### Required Information
+
+- **Participation status**: 
+  - `registered`: Signed up, no team yet
+  - `team_formed`: Joined or created a team
+  - `submitted`: Submitted project
+  - `winner`: Won a prize
+
+### Optional Team-Building Fields
+
+<Accordion title="Preferred Team Role">
+  What role do you want on the team?
+
+  - Frontend Developer
+  - Backend Developer
+  - Full-Stack Developer
+  - Designer (UI/UX)
+  - Data Scientist / ML Engineer
+  - DevOps / Infrastructure
+  - Product Manager
+  - Marketing / Business
+</Accordion>
+
+<Accordion title="Collaboration Style">
+  How do you prefer to work?
+
+  - Pair programming
+  - Independent tasks with check-ins
+  - Mob programming (whole team codes together)
+  - Async (work on your own time)
+</Accordion>
+
+<Accordion title="Team Size Preference">
+  Ideal team size:
+
+  - Solo (just me)
+  - Small (2-3 people)
+  - Medium (4-5 people)
+  - Large (6+ people)
+</Accordion>
+
+<Accordion title="Communication Preferences">
+  How should the team communicate?
+
+  - Voice chat (Discord, Zoom)
+  - Text chat only
+  - Video calls
+  - Async messages
+</Accordion>
+
+<Accordion title="Mentorship Preference">
+  Are you looking for mentorship or willing to mentor?
+
+  - Seeking mentorship
+  - Willing to mentor
+  - Peer collaboration (no mentorship)
+</Accordion>
+
+<Accordion title="Availability Pattern">
+  When can you work on the project?
+
+  - Weekdays only
+  - Weekends only
+  - Full availability
+  - Specific hours (e.g., "Evenings PST")
+</Accordion>
+
+<Accordion title="Project Type Preferences">
+  What do you want to build?
+
+  - Web app
+  - Mobile app
+  - AI/ML project
+  - Game
+  - Hardware/IoT
+  - Blockchain
+  - Open source contribution
+</Accordion>
+
+<Tip>
+  The more details you provide, the better TechCal can match you with compatible teammates.
+</Tip>
+
+## Participation Analytics
+
+Track your hackathon journey:
+
+### Your Hackathon Dashboard
+
+Go to **Dashboard** → **Hackathons** to see:
+
+- **Total hackathons participated**: Count of hackathons you've registered for
+- **Teams formed**: How many teams you've created
+- **Teams joined**: How many teams you've joined
+- **Projects submitted**: Count of submissions
+- **Wins**: Prizes won
+
+### Team Analytics (Team Page)
+
+On your team page, view:
+
+- **Member activity**: Who's been active in chat
+- **Skill coverage**: Visual breakdown of team skills
+- **Collaboration score**: How engaged the team is
+
+<Note>
+  Analytics are private to team members only. Other users can't see your team's activity level.
+</Note>
+
+## Team Lifecycle
+
+### Before Hackathon
+
+1. **Team Formation** (1-4 weeks before)
+   - Create or join team
+   - Discuss project ideas in chat
+   - Assign roles
+
+2. **Preparation** (1 week before)
+   - Finalize project idea
+   - Set up repos and tools
+   - Coordinate schedules
+
+### During Hackathon
+
+3. **Kickoff** (Day 1)
+   - Quick sync in chat or voice
+   - Divide tasks
+   - Start building
+
+4. **Collaboration** (Days 1-N)
+   - Regular check-ins
+   - Share progress
+   - Help each other with blockers
+
+5. **Submission** (Last day)
+   - Finalize project
+   - Prepare presentation
+   - Submit via hackathon platform
+
+### After Hackathon
+
+6. **Post-Event**
+   - Update participation status to `submitted`
+   - If you win, update to `winner`
+   - Team chat remains accessible for 30 days post-hackathon
+
+<Warning>
+  Team chats are automatically archived 30 days after the hackathon ends. Download important conversations before then.
+</Warning>
+
+## Common Scenarios
+
+<Tabs>
+  <Tab title="I'm a Beginner">
+    **Finding your first team:**
+
+    1. Look for teams tagged as **"Beginner-friendly"** or **"Open to newcomers"**
+    2. In your registration, set **Mentorship Preference** to **"Seeking mentorship"**
+    3. Browse teams and message creators directly: "Hi! I'm new to hackathons and would love to join. I know basic Python and am eager to learn."
+    4. Offer to handle non-coding tasks: documentation, testing, design (if applicable)
+
+    <Tip>
+      Many experienced hackers WANT to mentor beginners. Don't be shy—just be honest about your skill level.
+    </Tip>
+  </Tab>
+
+  <Tab title="I Have a Project Idea">
+    **Building a team around your idea:**
+
+    1. Create a team with a descriptive name: "AI Image Generator Team"
+    2. Write a detailed description:
+       > "Building an AI-powered image generator using Stable Diffusion. Looking for:
+       > - Frontend dev (React)
+       > - Backend dev (Python/FastAPI)
+       > - Designer (UI/UX)"
+    3. Share your team link in:
+       - Hackathon Discord servers
+       - LinkedIn posts
+       - Twitter with hashtags like #hackathon
+    4. Enable **Looking for Members**
+  </Tab>
+
+  <Tab title="I'm Looking for Teammates">
+    **Joining an existing team:**
+
+    1. Go to the hackathon's **Teams** tab
+    2. Filter by:
+       - "Looking for members"
+       - Team size (small, medium, large)
+       - Skills mentioned in descriptions
+    3. Read team descriptions carefully:
+       - Do they mention skills you have?
+       - Is their project idea interesting?
+       - Do their communication preferences match yours?
+    4. Click **Join Team** on the best match
+    5. Introduce yourself in chat immediately
+  </Tab>
+
+  <Tab title="My Team Isn't Active">
+    **Dealing with inactive teammates:**
+
+    1. Send a message in team chat: "Hey team, let's sync up. Who's available to work on this?"
+    2. If no response after 24 hours:
+       - Leave the team
+       - Join a different team (you can switch before the hackathon starts)
+    3. If the hackathon already started:
+       - Continue solo if possible
+       - Or form a new team with other solo participants
+
+    <Warning>
+      Some people join teams but don't commit. It's better to find out early and switch teams than to struggle alone during the hackathon.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Can't create a team">
+    **Possible causes**:
+    - You already have a team for this hackathon
+    - Registration deadline has passed
+    - Hackathon status is not "active"
+
+    **Solution**:
+    - Delete your existing team (if no other members joined)
+    - Or leave your current team first
+    - Check registration deadline in hackathon details
+  </Accordion>
+
+  <Accordion title="Team is full but shows 'Looking for members'">
+    **Cause**: Team creator forgot to toggle off the "Looking for members" setting.
+
+    **Solution**: Try joining anyway—TechCal will show an error if truly full. If it persists, message the team creator.
+  </Accordion>
+
+  <Accordion title="Chat messages not appearing">
+    **Cause**: WebSocket connection lost or network issue.
+
+    **Solution**:
+    1. Refresh the page
+    2. Check your internet connection
+    3. Try a different browser
+    4. If issue persists, contact support@techcal.com
+  </Accordion>
+
+  <Accordion title="Can't join any team">
+    **Possible causes**:
+    - You're already in a team for this hackathon
+    - All teams are full
+    - Registration deadline passed
+
+    **Solution**:
+    - Leave your current team if you want to switch
+    - Create your own team
+    - Check registration deadline
+  </Accordion>
+
+  <Accordion title="Team creator left the team">
+    **What happens**: If the team creator leaves, the next member (by join date) becomes the new creator automatically.
+
+    If all members leave, the team is deleted.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices for Successful Teams
+
+<AccordionGroup>
+  <Accordion title="Start Small, Think Big">
+    Don't over-commit. Build a **minimum viable project** first, then add features if time allows. Many winning projects are simple but polished.
+  </Accordion>
+
+  <Accordion title="Assign Clear Roles">
+    Within the first hour of forming, assign:
+    - **Tech lead**: Makes final tech decisions
+    - **Frontend**: UI implementation
+    - **Backend**: APIs and data
+    - **Design**: Mockups and UX
+    - **PM**: Keeps team on track, manages time
+
+    Even in a 2-person team, clarify who owns what.
+  </Accordion>
+
+  <Accordion title="Set Milestones">
+    Break the hackathon into phases:
+    - **Hour 1-2**: Ideation and planning
+    - **Hour 3-12**: Core feature development
+    - **Hour 13-20**: Integration and testing
+    - **Last 4 hours**: Polish, presentation, submission
+
+    Share these in team chat.
+  </Accordion>
+
+  <Accordion title="Over-Communicate">
+    Check in every 2-4 hours:
+    - "Just finished the login API, working on auth next"
+    - "Stuck on a bug, need help with state management"
+    - "Taking a 1-hour break, back at 3pm"
+
+    This keeps everyone aligned.
+  </Accordion>
+
+  <Accordion title="Prepare Your Demo Early">
+    Don't wait until the last hour. By the 80% mark, have:
+    - A working demo (even if incomplete)
+    - A slide deck or script
+    - A video walkthrough (if required)
+
+    You can always improve it, but you need SOMETHING ready.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Find Hackathons" icon="calendar" href="/features/discovery">
+    Browse upcoming hackathons on the Discover page
+  </Card>
+  <Card title="Complete Your Profile" icon="user" href="/community/profiles">
+    Set up your public profile to attract teammates
+  </Card>
+</CardGroup>
+
+---
+
+**Ready to build something amazing?** Find a hackathon, form a team, and ship your project with TechCal.

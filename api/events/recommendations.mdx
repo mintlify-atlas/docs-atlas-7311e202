@@ -1,0 +1,340 @@
+---
+title: "GET /api/events/recommendations"
+description: "Personalized event recommendations using tag-based matching and career alignment scoring"
+---
+
+## Overview
+
+The recommendations API returns personalized event suggestions based on the user's career profile, joined circles, and historical interactions. It combines tag-based matching with advanced career impact scoring and optional behavioral reranking.
+
+<Note>
+Requires authentication and a completed career profile. Returns empty results for users without profiles.
+</Note>
+
+## Authentication
+
+Requires a valid Supabase authentication token in the request headers.
+
+```bash
+Authorization: Bearer <supabase_access_token>
+```
+
+## Rate Limiting
+
+- **Limit:** 20 requests per minute per user
+- **Window:** Sliding window (1 minute)
+- **Response:** HTTP 429 if rate limit exceeded
+
+## Request
+
+### HTTP Method
+
+```
+GET /api/events/recommendations
+```
+
+### Query Parameters
+
+<ParamField query="limit" type="number" default="10">
+  Maximum number of recommendations to return (max 50)
+</ParamField>
+
+<ParamField query="tags" type="string">
+  Comma-separated list of tags to search for specific events
+  
+  Example: `tags=python,machine-learning,ai`
+</ParamField>
+
+<ParamField query="sessionId" type="string">
+  Session ID for telemetry tracking (optional)
+</ParamField>
+
+### Headers
+
+<ParamField header="X-Request-Id" type="string">
+  Optional request ID for tracing and debugging
+</ParamField>
+
+## Response
+
+### Success Response (200)
+
+<ResponseField name="success" type="boolean" required>
+  Always `true` for successful requests
+</ResponseField>
+
+<ResponseField name="data" type="object" required>
+  <Expandable title="data properties">
+    <ResponseField name="events" type="Event[]" required>
+      Array of recommended events with enriched metadata
+      
+      <Expandable title="Event schema">
+        <ResponseField name="id" type="string" required>
+          Event UUID
+        </ResponseField>
+        
+        <ResponseField name="title" type="string" required>
+          Event title
+        </ResponseField>
+        
+        <ResponseField name="description" type="string">
+          Event description (Markdown supported)
+        </ResponseField>
+        
+        <ResponseField name="startTime" type="string" required>
+          ISO 8601 timestamp
+        </ResponseField>
+        
+        <ResponseField name="tags" type="Tag[]">
+          Event tags with names and IDs
+        </ResponseField>
+        
+        <ResponseField name="careerImpact" type="object">
+          Career alignment scores from alignment core
+          
+          <Expandable title="careerImpact schema">
+            <ResponseField name="overall" type="number">
+              Overall career alignment score (0-100)
+            </ResponseField>
+            
+            <ResponseField name="confidence" type="number">
+              Confidence level (0-1)
+            </ResponseField>
+            
+            <ResponseField name="components" type="object">
+              <ResponseField name="skillRelevance" type="number">
+                Skill match score
+              </ResponseField>
+              <ResponseField name="careerStageMatch" type="number">
+                Seniority and role alignment
+              </ResponseField>
+              <ResponseField name="networkingValue" type="number">
+                Networking opportunity score
+              </ResponseField>
+              <ResponseField name="industryRelevance" type="number">
+                Industry match score
+              </ResponseField>
+              <ResponseField name="timingBonus" type="number">
+                Timing and urgency bonus
+              </ResponseField>
+            </ResponseField>
+            
+            <ResponseField name="explanation" type="object">
+              <ResponseField name="reasons" type="string[]">
+                Human-readable explanation strings
+              </ResponseField>
+              <ResponseField name="alignmentReasons" type="object[]">
+                Detailed alignment breakdown with weights
+              </ResponseField>
+              <ResponseField name="matchedSkills" type="string[]">
+                Skills from your profile that match this event
+              </ResponseField>
+              <ResponseField name="matchedGoals" type="string[]">
+                Career goals this event supports
+              </ResponseField>
+            </ResponseField>
+            
+            <ResponseField name="metadata" type="object">
+              <ResponseField name="algorithmVersion" type="string">
+                Scoring algorithm version (e.g., `alignment-core-v1`)
+              </ResponseField>
+              <ResponseField name="calculatedAt" type="string">
+                ISO 8601 timestamp of score calculation
+              </ResponseField>
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        
+        <ResponseField name="recommendationMetadata" type="object">
+          Tag-based ranking metadata
+          
+          <Expandable title="recommendationMetadata schema">
+            <ResponseField name="matchedTags" type="string[]">
+              Tags that matched your profile
+            </ResponseField>
+            
+            <ResponseField name="totalScore" type="number">
+              Combined tag + career score
+            </ResponseField>
+            
+            <ResponseField name="tagRank" type="number">
+              Original rank from tag matching
+            </ResponseField>
+            
+            <ResponseField name="alignmentScore" type="number">
+              Score from alignment core
+            </ResponseField>
+            
+            <ResponseField name="alignmentRank" type="number">
+              Final rank after reranking
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="total" type="number" required>
+      Number of events returned
+    </ResponseField>
+    
+    <ResponseField name="matchedTags" type="string[]" required>
+      All unique tags matched across returned events
+    </ResponseField>
+    
+    <ResponseField name="processingTimeMs" type="number" required>
+      Server processing time in milliseconds
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Error Responses
+
+<CodeGroup>
+```json 401 Unauthorized
+{
+  "success": false,
+  "error": "Authentication required"
+}
+```
+
+```json 404 Not Found
+{
+  "success": false,
+  "error": "Career profile not found. Please complete career onboarding."
+}
+```
+
+```json 429 Rate Limited
+{
+  "success": false,
+  "error": "Too many requests. Please try again later."
+}
+```
+
+```json 500 Server Error
+{
+  "success": false,
+  "error": "Internal server error"
+}
+```
+</CodeGroup>
+
+## Examples
+
+### Get Personalized Recommendations
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://kurecal.app/api/events/recommendations?limit=20" \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+const response = await fetch('/api/events/recommendations?limit=20', {
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+const { data } = await response.json();
+console.log(`Got ${data.total} recommendations`);
+console.log(`Matched tags: ${data.matchedTags.join(', ')}`);
+```
+
+```python Python
+import requests
+
+headers = {'Authorization': f'Bearer {token}'}
+response = requests.get(
+    'https://kurecal.app/api/events/recommendations',
+    params={'limit': 20},
+    headers=headers
+)
+
+data = response.json()['data']
+print(f"Got {data['total']} recommendations")
+```
+</CodeGroup>
+
+### Search by Specific Tags
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://kurecal.app/api/events/recommendations?tags=python,machine-learning&limit=10" \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+const tags = ['python', 'machine-learning'];
+const response = await fetch(
+  `/api/events/recommendations?tags=${tags.join(',')}&limit=10`,
+  {
+    headers: { 'Authorization': `Bearer ${token}` }
+  }
+);
+
+const { data } = await response.json();
+data.events.forEach(event => {
+  console.log(`${event.title} - Score: ${event.careerImpact.overall}`);
+});
+```
+</CodeGroup>
+
+## How It Works
+
+### Recommendation Pipeline
+
+1. **Profile Enrichment:** User's career profile is enriched with joined circle names for instant personalization boost
+
+2. **Tag Matching:** Events are ranked by tag similarity to user's:
+   - Primary skills
+   - Skills to learn
+   - Interests
+   - Career goals
+   - Joined circles
+
+3. **Career Alignment:** Each event receives an alignment score (0-100) based on:
+   - Skill relevance
+   - Career stage match
+   - Networking value
+   - Industry relevance
+   - Timing factors
+
+4. **Diversity Enhancement:** Results are reranked to provide variety across:
+   - Event types (conference, workshop, meetup)
+   - Topics and skills
+   - Date ranges
+
+5. **Behavioral Reranking (Optional):** If `DISCOVERY_RERANK=advanced`, user interaction history further refines order
+
+### Scoring Strategy Selection
+
+ Recommendations use the scoring strategy configured via environment variables:
+
+- `DISCOVERY_SCORING=server` (default): Pure alignment core
+- `DISCOVERY_SCORING=legacy`: Legacy enhanced scoring
+- `DISCOVERY_SCORING=shadow`: Both strategies with delta logging
+
+### Telemetry
+
+If user has analytics consent, the API logs:
+- Top 10 recommended events with scores
+- Kendall's tau correlation between tag ranking and alignment ranking
+- Divergence count (how many pairs switched order)
+- Tag match counts and processing time
+
+## Performance Notes
+
+- **Processing Time:** Typically 200-800ms depending on profile complexity
+- **Cache Strategy:** No caching; each request is freshly calculated for personalization accuracy
+- **Sampling Rate:** Matching telemetry sampled at 1% (configurable via `MATCHING_TELEMETRY_SAMPLE_RATE`)
+
+<Tip>
+For faster search results without personalization, use [GET /api/events/filtered](/api/events/filtered) with `fastSearch=true`.
+</Tip>
+
+## Related Endpoints
+
+- [POST /api/events/filtered](/api/events/filtered) - Advanced event search and filtering
+- [GET /api/profile/career](/api/profile/career) - View and update career profile
+- [GET /api/dashboard/analytics](/api/dashboard/analytics) - View recommendation performance analytics

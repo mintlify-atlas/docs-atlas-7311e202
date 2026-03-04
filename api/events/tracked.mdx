@@ -1,0 +1,321 @@
+---
+title: "POST /api/events/tracked"
+description: "Track user event interactions including bookmarks, attendance status, and calendar sync"
+---
+
+## Overview
+
+The event tracking API allows users to bookmark events, set attendance status (attending/attended/cancelled), and automatically sync bookmarked events to their connected Google Calendar.
+
+<Note>
+This endpoint is part of the user event tracking system. Tracking an event creates a record in `user_events` and optionally syncs to external calendars.
+</Note>
+
+## Authentication
+
+Requires a valid Supabase authentication token in the request headers.
+
+```bash
+Authorization: Bearer <supabase_access_token>
+```
+
+## Rate Limiting
+
+Inherits rate limiting from the underlying Supabase operations. No explicit API-level rate limit.
+
+## Request
+
+### HTTP Method
+
+```
+POST /api/events/tracked
+```
+
+### Headers
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="eventId" type="string" required>
+  UUID of the event to track
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  Tracking action to perform
+  
+  Options:
+  - `bookmark` - Add event to bookmarks
+  - `unbookmark` - Remove event from bookmarks
+  - `attend` - Mark as attending
+  - `attended` - Mark as attended (past event)
+  - `cancel` - Cancel attendance
+</ParamField>
+
+<ParamField body="syncToCalendar" type="boolean" default="true">
+  Whether to sync bookmarked events to connected calendar (Google Calendar)
+</ParamField>
+
+## Response
+
+### Success Response (200)
+
+<ResponseField name="success" type="boolean" required>
+  `true` if operation completed successfully
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="tracked" type="boolean">
+      Whether event is now tracked
+    </ResponseField>
+    
+    <ResponseField name="bookmarked" type="boolean">
+      Whether event is bookmarked
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Current attendance status: `attending`, `attended`, `cancelled`, or `null`
+    </ResponseField>
+    
+    <ResponseField name="calendarSynced" type="boolean">
+      Whether event was synced to external calendar
+    </ResponseField>
+    
+    <ResponseField name="externalEventId" type="string">
+      Google Calendar event ID (if synced)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Error Responses
+
+<CodeGroup>
+```json 401 Unauthorized
+{
+  "success": false,
+  "error": "Authentication required"
+}
+```
+
+```json 404 Not Found
+{
+  "success": false,
+  "error": "Event not found"
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "error": "Invalid action. Must be: bookmark, unbookmark, attend, attended, or cancel"
+}
+```
+
+```json 500 Server Error
+{
+  "success": false,
+  "error": "Failed to track event",
+  "details": "Calendar sync failed but event was tracked"
+}
+```
+</CodeGroup>
+
+## Examples
+
+### Bookmark an Event
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://kurecal.app/api/events/tracked \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "eventId": "550e8400-e29b-41d4-a716-446655440000",
+    "action": "bookmark",
+    "syncToCalendar": true
+  }'
+```
+
+```typescript TypeScript
+const response = await fetch('/api/events/tracked', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    eventId: '550e8400-e29b-41d4-a716-446655440000',
+    action: 'bookmark',
+    syncToCalendar: true
+  })
+});
+
+const { data } = await response.json();
+if (data.calendarSynced) {
+  console.log('Event added to Google Calendar');
+}
+```
+</CodeGroup>
+
+### Mark Event as Attending
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://kurecal.app/api/events/tracked \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "eventId": "550e8400-e29b-41d4-a716-446655440000",
+    "action": "attend"
+  }'
+```
+
+```typescript TypeScript
+await fetch('/api/events/tracked', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    eventId: eventId,
+    action: 'attend'
+  })
+});
+```
+</CodeGroup>
+
+### Cancel Attendance
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://kurecal.app/api/events/tracked \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "eventId": "550e8400-e29b-41d4-a716-446655440000",
+    "action": "cancel"
+  }'
+```
+
+```typescript TypeScript
+await fetch('/api/events/tracked', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    eventId: eventId,
+    action: 'cancel'
+  })
+});
+```
+</CodeGroup>
+
+## Calendar Sync Behavior
+
+### When Events Sync to Calendar
+
+Events are automatically synced to your connected Google Calendar when:
+- Event is **bookmarked** with `syncToCalendar: true`
+- Event status is set to **attending** or **attended**
+
+### When Events Are Removed from Calendar
+
+Events are removed from your calendar when:
+- Event is **unbookmarked**
+- Attendance is **cancelled**
+- Event tracking is removed entirely
+
+### Calendar Sync Requirements
+
+<Warning>
+**Prerequisites for calendar sync:**
+- User must have an active Google Calendar connection
+- Calendar connection must not require re-authentication
+- Event must have valid start/end times
+</Warning>
+
+### Sync Status Tracking
+
+Each tracked event includes sync metadata:
+
+```typescript
+{
+  calendar_sync_status: 'synced' | 'failed' | 'pending' | null,
+  calendar_synced_at: '2026-03-04T10:30:00Z',
+  external_calendar_event_id: 'google_event_id',
+  external_provider: 'google'
+}
+```
+
+## Event Tracking States
+
+### Bookmark States
+
+| Action | `is_bookmarked` | `status` | Calendar |
+|--------|----------------|----------|----------|
+| `bookmark` | `true` | unchanged | ✅ Synced |
+| `unbookmark` | `false` | unchanged | ❌ Removed |
+
+### Attendance States
+
+| Action | `is_bookmarked` | `status` | Calendar |
+|--------|----------------|----------|----------|
+| `attend` | unchanged | `attending` | ✅ Synced |
+| `attended` | unchanged | `attended` | ✅ Synced |
+| `cancel` | unchanged | `cancelled` | ❌ Removed |
+
+<Tip>
+You can both bookmark AND set attendance status. A bookmarked event with `attending` status will be synced to calendar.
+</Tip>
+
+## Telemetry
+
+If user has analytics consent, the following events are logged:
+- `event_tracked` - Event bookmark/attendance change
+- `calendar_sync_initiated` - Calendar sync started
+- `calendar_sync_completed` - Calendar sync succeeded
+- `calendar_sync_failed` - Calendar sync failed
+
+Telemetry includes:
+- Event ID
+- Action type
+- Sync status
+- Error details (if failed)
+
+## Error Handling
+
+### Calendar Sync Failures
+
+If calendar sync fails, the event is still tracked successfully. The response indicates partial success:
+
+```json
+{
+  "success": true,
+  "data": {
+    "tracked": true,
+    "bookmarked": true,
+    "calendarSynced": false,
+    "calendarError": "Token expired. Please reconnect your calendar."
+  }
+}
+```
+
+### Token Expiration
+
+If Google Calendar access token expires:
+1. API attempts automatic token refresh using refresh token
+2. If refresh succeeds, sync proceeds normally
+3. If refresh fails, sync fails but event remains tracked
+4. User receives notification to reconnect calendar in settings
+
+## Related Endpoints
+
+- [GET /api/events/filtered](/api/events/filtered) - Search and filter events
+- [POST /api/profile/preferences](/api/profile/preferences) - Connect Google Calendar
+- [GET /api/dashboard/analytics](/api/dashboard/analytics) - View tracked events analytics

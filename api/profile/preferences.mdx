@@ -1,0 +1,415 @@
+---
+title: "Profile Preferences API"
+description: "Manage user preferences including notifications, filtering defaults, and telemetry consent"
+---
+
+## Overview
+
+The profile preferences API manages user settings that control notifications, default filters, telemetry consent, and UI preferences. These settings are stored in the `profiles.preferences` JSONB field.
+
+<Note>
+Preferences are separate from career profile data. They control UI behavior and system settings rather than recommendation scoring.
+</Note>
+
+## Authentication
+
+Requires a valid Supabase authentication token.
+
+```bash
+Authorization: Bearer <supabase_access_token>
+```
+
+---
+
+## GET /api/profile
+
+Retrieve the authenticated user's full profile including preferences.
+
+### Request
+
+```
+GET /api/profile
+```
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  `true` if profile retrieved successfully
+</ResponseField>
+
+<ResponseField name="data" type="Profile">
+  <Expandable title="Profile schema">
+    <ResponseField name="id" type="string" required>
+      User UUID
+    </ResponseField>
+    
+    <ResponseField name="fullName" type="string">
+      User's full name
+    </ResponseField>
+    
+    <ResponseField name="avatarUrl" type="string">
+      Profile picture URL
+    </ResponseField>
+    
+    <ResponseField name="timezone" type="string">
+      IANA timezone (e.g., `America/Los_Angeles`)
+    </ResponseField>
+    
+    <ResponseField name="analyticsConsent" type="boolean">
+      Whether user consented to analytics tracking
+    </ResponseField>
+    
+    <ResponseField name="preferences" type="object">
+      User preferences JSONB object
+      
+      <Expandable title="Preferences schema">
+        <ResponseField name="notifications" type="object">
+          Notification settings
+          
+          <ResponseField name="email" type="boolean" default="true">
+            Email notifications enabled
+          </ResponseField>
+          
+          <ResponseField name="eventReminders" type="boolean" default="true">
+            Event reminder emails
+          </ResponseField>
+          
+          <ResponseField name="weeklyDigest" type="boolean" default="true">
+            Weekly recommendation digest
+          </ResponseField>
+          
+          <ResponseField name="goalProgress" type="boolean" default="true">
+            Career goal progress updates
+          </ResponseField>
+        </ResponseField>
+        
+        <ResponseField name="filtering" type="object">
+          Default filter preferences
+          
+          <ResponseField name="defaultFormat" type="string" default="all">
+            Default event format filter
+          </ResponseField>
+          
+          <ResponseField name="defaultBudget" type="string" default="all">
+            Default budget filter
+          </ResponseField>
+          
+          <ResponseField name="showPastEvents" type="boolean" default="false">
+            Include past events in results
+          </ResponseField>
+        </ResponseField>
+        
+        <ResponseField name="location" type="object">
+          User location for proximity scoring
+          
+          <ResponseField name="city" type="string">
+            City name
+          </ResponseField>
+          
+          <ResponseField name="country" type="string">
+            Country name
+          </ResponseField>
+        </ResponseField>
+        
+        <ResponseField name="calendarSync" type="object">
+          Calendar sync settings
+          
+          <ResponseField name="autoSync" type="boolean" default="true">
+            Automatically sync bookmarked events
+          </ResponseField>
+          
+          <ResponseField name="syncAttendance" type="boolean" default="true">
+            Sync attendance status changes
+          </ResponseField>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X GET https://kurecal.app/api/profile \
+  -H "Authorization: Bearer <token>"
+```
+
+```typescript TypeScript
+const response = await fetch('/api/profile', {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+
+const { data } = await response.json();
+console.log('Preferences:', data.preferences);
+```
+</CodeGroup>
+
+---
+
+## PATCH /api/profile
+
+Update user profile and preferences. Automatically invalidates profile cache.
+
+### Request
+
+```
+PATCH /api/profile
+```
+
+### Body Parameters
+
+<ParamField body="fullName" type="string">
+  User's full name
+</ParamField>
+
+<ParamField body="timezone" type="string">
+  IANA timezone string
+</ParamField>
+
+<ParamField body="preferences" type="object">
+  Preferences object (partial updates supported)
+  
+  See GET response for full preferences schema
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  `true` if update succeeded
+</ResponseField>
+
+<ResponseField name="data" type="Profile" required>
+  Updated profile (same schema as GET)
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Success message with cache invalidation confirmation
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL - Update Notifications
+curl -X PATCH https://kurecal.app/api/profile \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "eventReminders": true,
+        "weeklyDigest": false
+      }
+    }
+  }'
+```
+
+```typescript TypeScript - Update Location
+const response = await fetch('/api/profile', {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    preferences: {
+      location: {
+        city: 'San Francisco',
+        country: 'USA'
+      }
+    }
+  })
+});
+
+const { data } = await response.json();
+console.log('Location updated:', data.preferences.location);
+```
+
+```python Python - Update Calendar Sync
+import requests
+
+headers = {
+    'Content-Type': 'application/json',
+    'Authorization': f'Bearer {token}'
+}
+
+data = {
+    'preferences': {
+        'calendarSync': {
+            'autoSync': True,
+            'syncAttendance': True
+        }
+    }
+}
+
+response = requests.patch(
+    'https://kurecal.app/api/profile',
+    headers=headers,
+    json=data
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Error Responses
+
+<CodeGroup>
+```json 401 Unauthorized
+{
+  "success": false,
+  "error": "Authentication required"
+}
+```
+
+```json 400 Bad Request
+{
+  "success": false,
+  "error": "Invalid data",
+  "details": [
+    {
+      "path": ["preferences", "notifications"],
+      "message": "Expected object, received string"
+    }
+  ]
+}
+```
+</CodeGroup>
+
+---
+
+## Preference Categories
+
+### Notification Preferences
+
+Control email and in-app notifications:
+
+```typescript
+{
+  notifications: {
+    email: true,               // Master email toggle
+    eventReminders: true,      // Event reminder emails (24h, 1h before)
+    weeklyDigest: true,        // Weekly recommendation digest
+    goalProgress: true,        // Career goal milestone notifications
+    networkActivity: false     // Network follow/interaction notifications
+  }
+}
+```
+
+### Filtering Preferences
+
+Set default filters for event discovery:
+
+```typescript
+{
+  filtering: {
+    defaultFormat: 'virtual',    // Default event format filter
+    defaultBudget: 'free-only',  // Default budget filter
+    showPastEvents: false,       // Include past events in results
+    defaultSort: 'career-impact' // Default sort field
+  }
+}
+```
+
+### Location Preferences
+
+Location data for proximity scoring and timezone detection:
+
+```typescript
+{
+  location: {
+    city: 'San Francisco',
+    country: 'USA',
+    timezone: 'America/Los_Angeles' // Optional override
+  }
+}
+```
+
+### Calendar Sync Preferences
+
+Control automatic calendar synchronization:
+
+```typescript
+{
+  calendarSync: {
+    autoSync: true,           // Auto-sync bookmarked events
+    syncAttendance: true,     // Sync attendance status changes
+    provider: 'google',       // Active provider
+    lastSyncAt: '2026-03-04T10:30:00Z'
+  }
+}
+```
+
+### Telemetry Consent
+
+Manage analytics and telemetry consent:
+
+```typescript
+{
+  analyticsConsent: true,              // Master consent toggle
+  analyticsConsentDate: '2026-01-15T08:00:00Z',
+  telemetryDetails: {
+    eventViews: true,                  // Track event views
+    searchQueries: true,               // Track search queries
+    recommendationInteractions: true,  // Track rec clicks
+    featureUsage: true                // Track feature usage
+  }
+}
+```
+
+## Privacy Controls
+
+### Opting Out of Analytics
+
+To disable all analytics tracking:
+
+```typescript
+await fetch('/api/profile', {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    analyticsConsent: false
+  })
+});
+```
+
+<Warning>
+**Effect of opting out:**
+- No telemetry events logged to database
+- No recommendation performance tracking
+- No search query analytics
+- Behavioral reranking disabled
+- User still receives personalized recommendations based on profile
+</Warning>
+
+### Data Deletion
+
+To request full data deletion, contact support at support@kurecal.app. This will:
+- Delete career profile
+- Delete tracked events
+- Delete telemetry data
+- Delete calendar sync data
+- Anonymize remaining records
+
+## Cache Behavior
+
+Preference updates trigger cache invalidation:
+
+- **Profile cache:** Cleared immediately
+- **Recommendation cache:** Cleared if location changes
+- **Analytics cache:** Cleared if consent changes
+- **Calendar sync cache:** Cleared if sync settings change
+
+<Tip>
+Preference changes take effect immediately. No app reload required.
+</Tip>
+
+## Related Endpoints
+
+- [GET /api/profile/career](/api/profile/career) - Career profile management
+- [POST /api/events/filtered](/api/events/filtered) - Uses location preferences for proximity scoring
+- [GET /api/dashboard/analytics](/api/dashboard/analytics) - Respects analytics consent

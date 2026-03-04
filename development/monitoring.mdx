@@ -1,0 +1,612 @@
+---
+title: Monitoring & Telemetry
+description: Monitor TechCal with Sentry instrumentation, analytics, recommendation tracking, and rate limiting
+---
+
+TechCal includes comprehensive monitoring and telemetry to track errors, performance, user behavior, and recommendation quality.
+
+## Sentry Error Tracking
+
+TechCal uses [Sentry](https://sentry.io) for error tracking and performance monitoring.
+
+### Configuration
+
+Sentry is configured in three contexts:
+
+<Tabs>
+  <Tab title="Server">
+    ```typescript sentry.server.config.ts
+    import * as Sentry from '@sentry/nextjs';
+    
+    Sentry.init({
+      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      enabled: process.env.NODE_ENV !== 'development',
+      tracesSampleRate: 0.1, // Sample 10% of transactions
+      debug: process.env.SENTRY_DEBUG === 'true',
+      replaysSessionSampleRate: 0,
+      replaysOnErrorSampleRate: 0,
+    });
+    ```
+    
+    Server-side Sentry captures:
+    - API route errors
+    - Server component errors
+    - Background job failures
+  </Tab>
+
+  <Tab title="Edge">
+    ```typescript sentry.edge.config.ts
+    import * as Sentry from '@sentry/nextjs';
+    
+    Sentry.init({
+      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      enabled: process.env.NODE_ENV !== 'development',
+      tracesSampleRate: 0.1,
+    });
+    ```
+    
+    Edge runtime Sentry captures:
+    - Edge function errors
+    - Middleware errors
+  </Tab>
+
+  <Tab title="Client">
+    ```typescript sentry.client.config.ts
+    import * as Sentry from '@sentry/nextjs';
+    
+    Sentry.init({
+      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      enabled: process.env.NODE_ENV !== 'development',
+      tracesSampleRate: 0.1,
+      replaysSessionSampleRate: 0.1, // 10% of sessions
+      replaysOnErrorSampleRate: 1.0, // 100% of errors
+    });
+    ```
+    
+    Client-side Sentry captures:
+    - React component errors
+    - Browser errors
+    - User interactions (session replay)
+  </Tab>
+</Tabs>
+
+### Environment Variables
+
+```bash
+# Sentry DSN (public, safe to expose)
+NEXT_PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project-id
+
+# Auth token for uploading source maps (build-time only)
+SENTRY_AUTH_TOKEN=your_sentry_auth_token
+
+# Enable/disable Sentry
+SENTRY_ENABLED=true
+
+# Debug mode (verbose logging)
+SENTRY_DEBUG=false
+```
+
+<Note>
+  Sentry is automatically disabled in development mode to save memory. Set `SENTRY_ENABLED=true` to override.
+</Note>
+
+### Breadcrumbs
+
+TechCal logs breadcrumbs for debugging context:
+
+#### Scoring Analytics
+
+```typescript src/services/analyticsService.ts
+import * as Sentry from '@sentry/nextjs';
+
+export class AnalyticsService {
+  static logScoringDebug(payload: {
+    eventId: string;
+    version: string;
+    triggers: string[];
+    components: Record<string, number>;
+  }) {
+    Sentry.addBreadcrumb({
+      category: 'scoring-analytics',
+      level: 'info',
+      message: 'Scoring triggers',
+      data: payload,
+    });
+  }
+}
+```
+
+Usage:
+
+```typescript
+AnalyticsService.logScoringDebug({
+  eventId: 'evt_123',
+  version: 'v2.3.0',
+  triggers: ['goal_alignment', 'skill_match'],
+  components: {
+    goalScore: 0.85,
+    skillScore: 0.72,
+    overallScore: 0.79,
+  },
+});
+```
+
+#### Profile Prompt Events
+
+```typescript
+AnalyticsService.logProfilePromptEvent('prompt_shown', {
+  userId: 'user_123',
+  trigger: 'incomplete_profile',
+  fieldsNeeded: ['skills', 'goals'],
+});
+```
+
+### Error Context
+
+Add custom context to errors:
+
+```typescript
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.setContext('user', {
+  id: user.id,
+  role: user.current_role,
+  onboardingComplete: user.onboarding_complete,
+});
+
+Sentry.setContext('recommendation', {
+  strategy: 'advanced',
+  version: 'v2.3.0',
+  eventCount: 150,
+});
+```
+
+## Recommendation Monitoring
+
+Track recommendation performance and quality with `RecommendationMonitoringService`.
+
+### Quick Metrics
+
+Get real-time recommendation metrics:
+
+```typescript
+import { RecommendationMonitoringService } from '@/services/recommendationMonitoringService';
+
+const metrics = await RecommendationMonitoringService.getQuickMetrics(
+  supabase,
+  userId,
+  7 // Last 7 days
+);
+
+// {
+//   totalEvents: 150,
+//   totalClicks: 23,
+//   ctr: 0.153, // 15.3% click-through rate
+//   avgScore: 0.72,
+//   topTriggers: ['goal_alignment', 'skill_match', 'interest_boost']
+// }
+```
+
+### Score Range Analysis
+
+Analyze CTR by score ranges:
+
+```typescript
+const scoreRanges = await RecommendationMonitoringService.analyzeScoreRanges(
+  supabase,
+  userId,
+  30 // Last 30 days
+);
+
+// [
+//   {
+//     range: '0.8-1.0',
+//     minScore: 0.8,
+//     maxScore: 1.0,
+//     totalEvents: 45,
+//     totalClicks: 12,
+//     clickThroughRate: 0.267, // 26.7%
+//     avgScore: 0.89,
+//     avgConfidence: 0.92,
+//   },
+//   { range: '0.6-0.8', ... },
+//   ...
+// ]
+```
+
+### Trigger Analysis
+
+Identify which scoring triggers drive engagement:
+
+```typescript
+const triggers = await RecommendationMonitoringService.analyzeTriggers(
+  supabase,
+  userId,
+  30
+);
+
+// [
+//   {
+//     trigger: 'goal_alignment',
+//     eventCount: 78,
+//     totalClicks: 21,
+//     clickThroughRate: 0.269,
+//     avgScore: 0.81,
+//     scoreRangeDistribution: {
+//       '0.8-1.0': 34,
+//       '0.6-0.8': 44,
+//     },
+//   },
+//   ...
+// ]
+```
+
+### Monitoring Summary
+
+Comprehensive analytics dashboard data:
+
+```typescript
+const summary = await RecommendationMonitoringService.getMonitoringSummary(
+  supabase,
+  userId,
+  30
+);
+
+// {
+//   dateRange: { from: '2026-02-04', to: '2026-03-04' },
+//   totalEvents: 450,
+//   totalInteractions: 87,
+//   overallCTR: 0.193,
+//   scoreRanges: [...],
+//   topTriggers: [...],
+//   outliers: [...],
+//   recommendations: [
+//     'High CTR in 0.8-1.0 range suggests threshold is effective',
+//     'Consider boosting events with "goal_alignment" trigger',
+//   ],
+//   behavioralBoostStats: { ... },
+// }
+```
+
+### Monitoring Configuration
+
+Configure thresholds in `src/config/monitoringConstants.ts`:
+
+```typescript
+export const MONITORING_CONFIG = {
+  scoreRanges: [
+    { min: 0.8, max: 1.0, label: '0.8-1.0' },
+    { min: 0.6, max: 0.8, label: '0.6-0.8' },
+    { min: 0.4, max: 0.6, label: '0.4-0.6' },
+    { min: 0.0, max: 0.4, label: '0.0-0.4' },
+  ],
+  outlierThresholds: {
+    highPerformance: 0.3, // CTR > 30%
+    lowPerformance: 0.05, // CTR < 5%
+  },
+};
+```
+
+## Analytics & Telemetry
+
+TechCal logs sanitized analytics events to Supabase.
+
+### Telemetry Service
+
+```typescript src/utils/supabase/telemetry.ts
+import { logTelemetryEvent } from '@/utils/supabase/telemetry';
+
+// Log event interaction
+await logTelemetryEvent(supabase, userId, {
+  event_type: 'event_click',
+  event_id: 'evt_123',
+  algorithm_version: 'v2.3.0',
+  score: 0.85,
+  triggers: ['goal_alignment', 'skill_match'],
+});
+
+// Log filter change
+await logTelemetryEvent(supabase, userId, {
+  event_type: 'filter_applied',
+  filters: {
+    event_type: ['conference', 'workshop'],
+    budget: 'free',
+  },
+});
+```
+
+### Consent Management
+
+Respect user telemetry preferences:
+
+```typescript
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('telemetry_consent')
+  .eq('id', userId)
+  .single();
+
+if (profile.telemetry_consent) {
+  await logTelemetryEvent(supabase, userId, event);
+}
+```
+
+### PostHog Integration
+
+TechCal supports PostHog for product analytics:
+
+```typescript src/lib/posthog-server.ts
+import { PostHog } from 'posthog-node';
+
+const posthog = new PostHog(
+  process.env.NEXT_PUBLIC_POSTHOG_KEY!,
+  {
+    host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+  }
+);
+
+// Track event
+posthog.capture({
+  distinctId: userId,
+  event: 'recommendation_shown',
+  properties: {
+    eventId: 'evt_123',
+    score: 0.85,
+    version: 'v2.3.0',
+  },
+});
+```
+
+<Note>
+  PostHog is optional. Set `NEXT_PUBLIC_POSTHOG_KEY` to enable.
+</Note>
+
+## Rate Limiting
+
+TechCal uses [Upstash Rate Limit](https://upstash.com/docs/redis/features/ratelimiting) to protect high-traffic APIs.
+
+### Configuration
+
+Rate limiting with Vercel KV:
+
+```typescript src/app/api/events/filtered/route.ts
+import { Ratelimit } from '@upstash/ratelimit';
+import { kv } from '@vercel/kv';
+
+const ratelimit = new Ratelimit({
+  redis: kv,
+  limiter: Ratelimit.slidingWindow(100, '1 m'), // 100 requests per minute
+});
+
+export async function GET(request: Request) {
+  const userId = request.headers.get('x-user-id');
+  
+  const { success, limit, remaining } = await ratelimit.limit(
+    `api_filtered_${userId}`
+  );
+  
+  if (!success) {
+    return new Response('Rate limit exceeded', {
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': limit.toString(),
+        'X-RateLimit-Remaining': remaining.toString(),
+      },
+    });
+  }
+  
+  // Handle request...
+}
+```
+
+### Rate Limit Strategies
+
+<CodeGroup>
+  ```typescript Sliding Window
+  // 100 requests per minute
+  Ratelimit.slidingWindow(100, '1 m')
+  ```
+
+  ```typescript Fixed Window
+  // 1000 requests per hour
+  Ratelimit.fixedWindow(1000, '1 h')
+  ```
+
+  ```typescript Token Bucket
+  // 10 requests per second, burst of 20
+  Ratelimit.tokenBucket(10, '1 s', 20)
+  ```
+</CodeGroup>
+
+### Client-Side Handling
+
+Gracefully handle rate limits:
+
+```typescript
+const response = await fetch('/api/events/filtered');
+
+if (response.status === 429) {
+  const remaining = response.headers.get('X-RateLimit-Remaining');
+  const limit = response.headers.get('X-RateLimit-Limit');
+  
+  showNotification({
+    type: 'warning',
+    message: `Rate limit exceeded. Try again in a moment.`,
+  });
+  
+  return;
+}
+```
+
+### Environment Variables
+
+```bash
+# Vercel KV (automatically populated when linked)
+KV_REST_API_URL=https://your-kv.kv.vercel-storage.com
+KV_REST_API_TOKEN=your_token
+
+# Alternative: Upstash Redis
+UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_token
+```
+
+## Caching Strategy
+
+TechCal uses multiple caching layers:
+
+### Vercel KV Cache
+
+Cache expensive operations:
+
+```typescript
+import { kv } from '@vercel/kv';
+
+const cacheKey = `user_recommendations_${userId}`;
+const cached = await kv.get(cacheKey);
+
+if (cached) {
+  return cached;
+}
+
+const recommendations = await computeRecommendations(userId);
+
+// Cache for 5 minutes
+await kv.set(cacheKey, recommendations, { ex: 300 });
+
+return recommendations;
+```
+
+### React Query Cache
+
+Client-side data caching:
+
+```typescript
+import { useQuery } from '@tanstack/react-query';
+
+const { data, isLoading } = useQuery({
+  queryKey: ['events', filters],
+  queryFn: () => fetchFilteredEvents(filters),
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: 10 * 60 * 1000, // 10 minutes
+});
+```
+
+## Performance Monitoring
+
+### API Response Times
+
+Log slow API calls:
+
+```typescript
+const start = Date.now();
+const result = await expensiveOperation();
+const duration = Date.now() - start;
+
+if (duration > 1000) {
+  console.warn(`Slow operation: ${duration}ms`);
+  Sentry.captureMessage(`Slow API call: ${duration}ms`, 'warning');
+}
+```
+
+### Database Query Performance
+
+Monitor Supabase queries:
+
+```typescript
+const start = performance.now();
+const { data, error } = await supabase
+  .from('events')
+  .select('*')
+  .gte('start_date', today);
+const duration = performance.now() - start;
+
+if (duration > 500) {
+  Sentry.addBreadcrumb({
+    category: 'database',
+    message: 'Slow query',
+    data: { duration, table: 'events' },
+  });
+}
+```
+
+## Monitoring Dashboard
+
+Access monitoring data:
+
+### Sentry Dashboard
+
+- **Errors** - Real-time error tracking
+- **Performance** - Transaction traces, slow queries
+- **Releases** - Deploy tracking, regression detection
+- **Alerts** - Email/Slack notifications
+
+### Vercel Analytics
+
+- **Core Web Vitals** - LCP, FID, CLS
+- **Page Performance** - Load times, TTFB
+- **User Metrics** - Unique visitors, page views
+
+### Custom Analytics
+
+Build custom dashboards with recommendation monitoring:
+
+```typescript src/app/admin/analytics/page.tsx
+import { RecommendationMonitoringService } from '@/services/recommendationMonitoringService';
+
+export default async function AnalyticsPage() {
+  const summary = await RecommendationMonitoringService.getMonitoringSummary(
+    supabase,
+    null, // All users
+    30
+  );
+  
+  return (
+    <Dashboard>
+      <MetricCard title="Overall CTR" value={summary.overallCTR} />
+      <ScoreRangeChart data={summary.scoreRanges} />
+      <TriggerTable data={summary.topTriggers} />
+    </Dashboard>
+  );
+}
+```
+
+## Alerting
+
+### Sentry Alerts
+
+Configure in Sentry dashboard:
+- **Error spikes** - Alert when error rate increases
+- **New issues** - Notify on first occurrence
+- **Performance degradation** - Alert on slow transactions
+
+### Custom Alerts
+
+Implement custom monitoring:
+
+```typescript
+const metrics = await RecommendationMonitoringService.getQuickMetrics(
+  supabase,
+  null,
+  1
+);
+
+if (metrics.ctr < 0.05) {
+  // CTR dropped below 5%
+  await sendSlackAlert({
+    channel: '#alerts',
+    message: `⚠️ Recommendation CTR dropped to ${metrics.ctr * 100}%`,
+  });
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deployment" icon="rocket" href="/development/deployment">
+    Deploy with monitoring configured
+  </Card>
+  
+  <Card title="Environment Variables" icon="gear" href="/development/environment">
+    Configure monitoring environment variables
+  </Card>
+</CardGroup>
