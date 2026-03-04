@@ -126,15 +126,22 @@
     "Behavioral analytics and recommendation tuning"
   ],
   "publicApiSurface": [
-    "GET /api/events/filtered - Retrieve filtered events with career scoring",
+    "POST /api/events/filtered - Retrieve filtered events with career scoring",
     "GET /api/events/recommendations - Get personalized event recommendations",
-    "POST /api/events/tracked - Track user event interactions",
+    "Client-side tracking via Supabase RPC - Track user event bookmarks and attendance",
     "GET /api/dashboard/analytics - Fetch career analytics and insights",
     "POST /api/calendar/sync - Sync events with external calendars",
-    "GET /api/profile/career - Retrieve user career profile",
-    "PUT /api/profile/career - Update career profile and preferences",
+    "GET /api/calendar/google/connect - Connect Google Calendar",
+    "GET /api/calendar/google/status - Check calendar connection status",
+    "GET /api/profile - Retrieve user profile",
+    "PATCH /api/profile - Update user profile",
+    "GET /api/profile/social - Get social profile settings",
     "POST /api/admin/ingestion/run - Trigger event ingestion pipeline",
-    "GET /api/community/search - Search users and profiles",
-    "POST /api/hackathons/teams - Create or join hackathon teams"
+    "GET /api/users/search - Search users and profiles",
+    "GET /api/follows/[userId] - Get follow relationship",
+    "POST /api/follows - Follow a user",
+    "DELETE /api/follows/[userId] - Unfollow a user",
+    "GET /api/blocks - Get blocked users",
+    "POST /api/blocks - Block a user"
   ]
 }
